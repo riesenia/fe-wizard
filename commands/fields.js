@@ -321,6 +321,31 @@ export async function boxHasSubitems(boxKey) {
     return config ? config['has_subitems'] !== undefined && config['has_subitems'] !== false : false;
 }
 
+export async function getSeedableFields(section, boxKey) {
+    const config = await readBoxConfig(section, boxKey);
+    const result = { name: false, url: false, moduleData: {} };
+
+    result.name = !config || !('name' in config) || config['name'] !== false;
+    result.url  = !config || !('url'  in config) || config['url']  !== false;
+
+    if (config) {
+        for (const [k, v] of Object.entries(config)) {
+            if (!k.startsWith('module_data.') || !v || v === false) continue;
+            const type = v.type ?? 'text';
+            if (type !== 'upload') result.moduleData[k.replace('module_data.', '')] = type;
+        }
+    }
+
+    return result;
+}
+
+export async function getSubitemsType(boxKey) {
+    const config = await readBoxConfig('boxItems', boxKey);
+    if (!config) return null;
+    const val = config['has_subitems'];
+    return (val && val !== false) ? val : null;
+}
+
 export async function runBoxFields(box) {
     return runFieldsForSection(box, 'boxItems');
 }

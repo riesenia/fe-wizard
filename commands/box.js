@@ -27,6 +27,22 @@ function mysqlArgs({ DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME }, query) {
     return [`-h${DB_HOST}`, `-P${DB_PORT}`, `-u${DB_USER}`, `-p${DB_PASS}`, DB_NAME, '-e', query, '--skip-column-names'];
 }
 
+function typeToTable(type) {
+    if (type.endsWith('y')) return `rshop_${type.slice(0, -1)}ies`;
+    return `rshop_${type}s`;
+}
+
+export async function fetchTypeIds(type, limit) {
+    const db = await getDbConfig();
+    const table = typeToTable(type);
+    try {
+        const { stdout } = await execa('mysql', mysqlArgs(db, `SELECT id FROM \`${table}\` ORDER BY id ASC LIMIT ${limit}`));
+        return stdout.trim().split('\n').filter(Boolean).map(Number);
+    } catch {
+        return [];
+    }
+}
+
 export async function fetchBoxTypes() {
     const db = await getDbConfig();
     const { stdout } = await execa('mysql', mysqlArgs(db, "SHOW COLUMNS FROM rshop_boxes LIKE 'type'"));
@@ -273,10 +289,10 @@ function buildScss(boxKey) {
 
 function buildSubitemsBlock(cssClass, varName, subitemsType) {
     const innerLoop = subitemsType === 'custom'
-        ? `                    foreach ($subItems as $subItem) {
+        ? `foreach ($subItems as $subItem) {
                         echo $subItem->name;
                     }`
-        : `                    foreach ($subItems as $subItem) {
+        : `foreach ($subItems as $subItem) {
                         if (!$subItem->${subitemsType}) {
                             continue;
                         }
