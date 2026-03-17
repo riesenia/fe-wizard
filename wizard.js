@@ -1,0 +1,149 @@
+#!/usr/bin/env node
+import * as p from '@clack/prompts';
+import pc from 'picocolors';
+import { runQuiz } from './commands/quiz.js';
+import { cancel } from './utils.js';
+import { runBox, fetchAllBoxes, fetchBoxTypes } from './commands/box.js';
+import { runBoxFields, runBoxSubitemFields, boxHasSubitems, enableBoxSubitems } from './commands/fields.js';
+import { runBoxSeed, checkSeedExists } from './commands/seed.js';
+
+p.intro(pc.bold('Welcome to rWizard ✨ '));
+
+async function boxActions(box) {
+    const done = new Set();
+
+    if (await checkSeedExists(box.boxKey)) done.add('seed');
+    let hasSubitems = await boxHasSubitems(box.boxKey);
+
+    const label = (value, text) => done.has(value) ? `${text} ${pc.green('✓')}` : text;
+
+    while (true) {
+        const options = [
+            { value: 'fields',         label: label('fields',         'Update boxItems fields') },
+            ...(hasSubitems
+                ? [{ value: 'subitemFields', label: label('subitemFields', 'Update boxSubitems fields') }]
+                : [{ value: 'enableSubitems', label: 'Enable boxSubitems' }]),
+            { value: 'seed',           label: label('seed',           'Create seed data') },
+            { value: 'bye',            label: 'Bye-bye 👋' },
+        ];
+
+        const action = await p.select({
+            message: `📦 "${box.name}" — what's next?`,
+            options,
+        });
+
+        if (p.isCancel(action)) cancel();
+
+        if (action === 'bye') {
+            p.outro(pc.dim('See you next time!'));
+            process.exit(0);
+        }
+
+        if (action === 'fields') {
+            await runBoxFields(box);
+            done.add('fields');
+        }
+
+        if (action === 'subitemFields') {
+            await runBoxSubitemFields(box);
+            done.add('subitemFields');
+        }
+
+        if (action === 'enableSubitems') {
+            const spinner = p.spinner();
+            spinner.start('Fetching box types...');
+            let types;
+            try {
+                types = await fetchBoxTypes();
+                spinner.stop(pc.cyan(`Loaded ${types.length} box types`));
+            } catch (err) {
+                spinner.stop(pc.red('Failed to fetch box types'));
+                p.log.error(err.message);
+                continue;
+            }
+
+            const subitemsType = await p.select({
+                message: 'Subitem type:',
+                options: types.map((t) => ({ value: t, label: t })),
+            });
+            if (p.isCancel(subitemsType)) cancel();
+
+            spinner.start('Saving to config/rshop.php...');
+            try {
+                await enableBoxSubitems(box.boxKey, subitemsType);
+                spinner.stop(pc.cyan('config/rshop.php updated ✨'));
+                hasSubitems = true;
+            } catch (err) {
+                spinner.stop(pc.red('Failed to write config'));
+                p.log.error(err.message);
+            }
+        }
+
+        if (action === 'seed') {
+            await runBoxSeed(box.boxKey, box.type, box.limit);
+            done.add('seed');
+        }
+    }
+}
+
+async function boxMenu() {
+    while (true) {
+        const action = await p.select({
+            message: 'Box',
+            options: [
+                { value: 'create', label: 'Create' },
+                { value: 'edit',   label: 'Edit' },
+            ],
+        });
+
+        if (p.isCancel(action)) cancel();
+
+        if (action === 'create') {
+            const box = await runBox();
+            await boxActions(box);
+        }
+
+        if (action === 'edit') {
+            const spinner = p.spinner();
+            spinner.start('Loading boxes...');
+            let boxes;
+            try {
+                boxes = await fetchAllBoxes();
+                spinner.stop(pc.cyan(`Loaded ${boxes.length} boxes`));
+            } catch (err) {
+                spinner.stop(pc.red('Failed to load boxes'));
+                p.log.error(err.message);
+                continue;
+            }
+
+            const boxKey = await p.select({
+                message: 'Select a box',
+                options: boxes.map((b) => ({ value: b.boxKey, label: `${b.boxKey} (${b.name})` })),
+            });
+            if (p.isCancel(boxKey)) cancel();
+
+            const box = boxes.find((b) => b.boxKey === boxKey);
+            await boxActions(box);
+        }
+    }
+}
+
+const action = await p.select({
+    message: 'Hi! With what can I help you?',
+    options: [
+        { value: 'box',    label: 'Box' },
+        { value: 'banner', label: 'Banner place (TBD)' },
+        { value: 'config', label: 'Configuration (TBD)' },
+        { value: 'quiz',   label: "I'm bored" },
+    ],
+});
+
+if (p.isCancel(action)) cancel();
+if (action) {
+    if (action === 'box')    await boxMenu();
+    if (action === 'banner') p.log.warn('Coming soon!');
+    if (action === 'config') p.log.warn('Coming soon!');
+    if (action === 'quiz')   await runQuiz();
+}
+
+p.outro(pc.dim('See you next time!'));

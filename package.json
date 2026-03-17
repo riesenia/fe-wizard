@@ -1,0 +1,14 @@
+{
+  "name": "r-wizard",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "r-wizard": "./wizard.js"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.0.1",
+    "clipboardy": "^5.3.1",
+    "execa": "^9.6.1",
+    "picocolors": "^1.1.1"
+  }
+}
