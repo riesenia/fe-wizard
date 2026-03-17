@@ -1,7 +1,12 @@
 {
   "name": "r-wizard",
   "version": "0.1.0",
+  "description": "Interactive CLI wizard for rShop development tasks",
+  "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "r-wizard": "./wizard.js"
   },

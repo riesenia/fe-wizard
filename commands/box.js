@@ -4,7 +4,7 @@ import { execa } from 'execa';
 import clipboard from 'clipboardy';
 import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, toCamelCase, toLowerCamelCase, cancel } from '../utils.js';
+import { rootDir, toCamelCase, toLowerCamelCase, cancel, validatePositiveInt } from '../utils.js';
 import { writeBoxItemsConfig, writeBoxConfig } from './fields.js';
 
 function parseEnv(content) {
@@ -149,10 +149,7 @@ export async function runBox() {
     if (limitChoice === 'custom') {
         const customLimit = await p.text({
             message: 'Enter limit:',
-            validate: (val) => {
-                if (!val || !val.trim() || isNaN(Number(val)) || Number(val) <= 0)
-                    return 'Enter a valid positive number';
-            },
+            validate: validatePositiveInt,
         });
         if (p.isCancel(customLimit)) cancel();
         limit = customLimit.trim();

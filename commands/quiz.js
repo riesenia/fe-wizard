@@ -1,5 +1,6 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
+import { cancel } from '../utils.js';
 
 const QUESTIONS = [
     {
@@ -242,10 +243,7 @@ export async function runQuiz() {
                 label: `${LABELS[idx]}. ${text}`,
             })),
         });
-        if (p.isCancel(answer)) {
-            p.cancel('Quiz cancelled.');
-            process.exit(0);
-        }
+        if (p.isCancel(answer)) cancel('Quiz cancelled.');
 
         if (answer === correct) {
             score++;

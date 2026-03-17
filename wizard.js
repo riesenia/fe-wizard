@@ -42,14 +42,10 @@ async function boxActions(box) {
         if (action === 'fields') {
             await runBoxFields(box);
             done.add('fields');
-        }
-
-        if (action === 'subitemFields') {
+        } else if (action === 'subitemFields') {
             await runBoxSubitemFields(box);
             done.add('subitemFields');
-        }
-
-        if (action === 'enableSubitems') {
+        } else if (action === 'enableSubitems') {
             const spinner = p.spinner();
             spinner.start('Fetching box types...');
             let types;
@@ -77,9 +73,7 @@ async function boxActions(box) {
                 spinner.stop(pc.red('Failed to write config'));
                 p.log.error(err.message);
             }
-        }
-
-        if (action === 'seed') {
+        } else if (action === 'seed') {
             await runBoxSeed(box.boxKey, box.type, box.limit);
             done.add('seed');
         }
@@ -101,9 +95,7 @@ async function boxMenu() {
         if (action === 'create') {
             const box = await runBox();
             await boxActions(box);
-        }
-
-        if (action === 'edit') {
+        } else if (action === 'edit') {
             const spinner = p.spinner();
             spinner.start('Loading boxes...');
             let boxes;
@@ -140,10 +132,10 @@ const action = await p.select({
 
 if (p.isCancel(action)) cancel();
 if (action) {
-    if (action === 'box')    await boxMenu();
-    if (action === 'banner') p.log.warn('Coming soon!');
-    if (action === 'config') p.log.warn('Coming soon!');
-    if (action === 'quiz')   await runQuiz();
+    if (action === 'box')         await boxMenu();
+    else if (action === 'banner') p.log.warn('Coming soon!');
+    else if (action === 'config') p.log.warn('Coming soon!');
+    else if (action === 'quiz')   await runQuiz();
 }
 
 p.outro(pc.dim('See you next time!'));

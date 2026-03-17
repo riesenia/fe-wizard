@@ -18,3 +18,8 @@ export function cancel(msg = 'Cancelled.') {
     p.cancel(msg);
     process.exit(0);
 }
+
+export function validatePositiveInt(val) {
+    if (!val || !val.trim() || isNaN(Number(val)) || Number(val) <= 0)
+        return 'Enter a valid positive number';
+}

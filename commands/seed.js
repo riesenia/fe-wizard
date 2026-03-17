@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { readdir, writeFile, access, unlink } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, toCamelCase, cancel } from '../utils.js';
+import { rootDir, toCamelCase, cancel, validatePositiveInt } from '../utils.js';
 
 export async function checkSeedExists(boxKey) {
     const seedClassName = `${toCamelCase(boxKey)}BoxItemsSeed`;
@@ -82,10 +82,7 @@ export async function runBoxSeed(boxKey, type, limit) {
     if (countChoice === 'custom') {
         const customCount = await p.text({
             message: 'Enter count:',
-            validate: (val) => {
-                if (!val || !val.trim() || isNaN(Number(val)) || Number(val) <= 0)
-                    return 'Enter a valid positive number';
-            },
+            validate: validatePositiveInt,
         });
         if (p.isCancel(customCount)) cancel();
         count = Number(customCount);
