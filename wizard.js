@@ -84,10 +84,9 @@ async function boxActions(box) {
 
 async function bannerActions(banner) {
     const done = new Set();
+    const label = (value, text) => done.has(value) ? `${text} ${pc.green('✓')}` : text;
 
     while (true) {
-        const label = (value, text) => done.has(value) ? `${text} ${pc.green('✓')}` : text;
-
         const action = await p.select({
             message: `🎯 "${banner.name}" — what's next?`,
             options: [

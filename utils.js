@@ -70,6 +70,44 @@ export function validatePositiveInt(val) {
         return 'Enter a valid positive number';
 }
 
+function parseEnv(content) {
+    const result = {};
+    for (const line of content.split('\n')) {
+        const match = line.match(/^export\s+(\w+)=["']?([^"'\n#]*)["']?/);
+        if (match) result[match[1]] = match[2].trim().replace(/["']/g, '');
+    }
+    return result;
+}
+
+export async function getDbConfig() {
+    const envContent = await readFile(join(rootDir, 'config/.env'), 'utf8');
+    const env = parseEnv(envContent);
+    const { DB_HOST = '127.0.0.1', DB_PORT = '3306', DB_USER = 'root', DB_PASS = 'root', DB_NAME } = env;
+    return { DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME };
+}
+
+export function mysqlArgs({ DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME }, query) {
+    return [`-h${DB_HOST}`, `-P${DB_PORT}`, `-u${DB_USER}`, `-p${DB_PASS}`, DB_NAME, '-e', query, '--skip-column-names'];
+}
+
+export async function promptLimit(presets) {
+    const limitChoice = await p.select({
+        message: "What's the limit?",
+        options: [
+            ...presets.map((n) => ({ value: String(n), label: String(n) })),
+            { value: 'custom', label: 'Custom' },
+        ],
+    });
+    if (p.isCancel(limitChoice)) cancel();
+
+    if (limitChoice === 'custom') {
+        const customLimit = await p.text({ message: 'Enter limit:', validate: validatePositiveInt });
+        if (p.isCancel(customLimit)) cancel();
+        return customLimit.trim();
+    }
+    return limitChoice;
+}
+
 export async function promptEditorPreset() {
     const editorPresets = await fetchEditorPresets();
     const presetChoice = await p.select({

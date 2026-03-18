@@ -3,27 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { readdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, toCamelCase, toLowerCamelCase, cancel, FIELD_TYPES, TEXT_FIELD_TYPES, promptEditorPreset, promptSelectOptions } from '../utils.js';
-
-function parseEnv(content) {
-    const result = {};
-    for (const line of content.split('\n')) {
-        const match = line.match(/^export\s+(\w+)=["']?([^"'\n#]*)["']?/);
-        if (match) result[match[1]] = match[2].trim().replace(/["']/g, '');
-    }
-    return result;
-}
-
-async function getDbConfig() {
-    const envContent = await readFile(join(rootDir, 'config/.env'), 'utf8');
-    const env = parseEnv(envContent);
-    const { DB_HOST = '127.0.0.1', DB_PORT = '3306', DB_USER = 'root', DB_PASS = 'root', DB_NAME } = env;
-    return { DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME };
-}
-
-function mysqlArgs({ DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME }, query) {
-    return [`-h${DB_HOST}`, `-P${DB_PORT}`, `-u${DB_USER}`, `-p${DB_PASS}`, DB_NAME, '-e', query, '--skip-column-names'];
-}
+import { rootDir, toCamelCase, toLowerCamelCase, cancel, FIELD_TYPES, TEXT_FIELD_TYPES, promptEditorPreset, promptSelectOptions, getDbConfig, mysqlArgs } from '../utils.js';
 
 async function configKeyExists(fullKey) {
     const db = await getDbConfig();

@@ -50,12 +50,12 @@ function findArrayEnd(text, openPos) {
 }
 
 async function readBoxConfig(section, boxKey) {
-    const filePath = join(rootDir, 'config/rshop.php').replace(/'/g, "\\'");
+    const phpFilePath = join(rootDir, 'config/rshop.php').replace(/'/g, "\\'");
     const escapedKey = boxKey.replace(/'/g, "\\'");
     try {
         const { stdout } = await execa('php', [
             '-r',
-            `$c = include '${filePath}'; echo json_encode($c['Admin']['${section}']['${escapedKey}'] ?? null);`,
+            `$c = include '${phpFilePath}'; echo json_encode($c['Admin']['${section}']['${escapedKey}'] ?? null);`,
         ], { cwd: rootDir });
         return JSON.parse(stdout);
     } catch {
@@ -125,6 +125,39 @@ function getCustomFields(config) {
 }
 
 // ─── UI ───────────────────────────────────────────────────────────────────────
+
+async function promptManageCustomFields(customFields, { getLabel, getEditValue, onEdit, onRemove }) {
+    while (true) {
+        const pick = await p.select({
+            message: 'Custom fields:',
+            options: [
+                ...customFields.map((f) => ({ value: f.key, label: `${f.key} (${getLabel(f)})` })),
+                { value: '__done', label: 'Done managing' },
+            ],
+        });
+        if (p.isCancel(pick)) cancel();
+        if (pick === '__done') break;
+
+        const action = await p.select({
+            message: `"${pick}"`,
+            options: [
+                { value: 'keep',   label: 'Keep' },
+                { value: 'edit',   label: 'Edit' },
+                { value: 'remove', label: 'Remove' },
+            ],
+        });
+        if (p.isCancel(action)) cancel();
+        if (action === 'remove') {
+            onRemove(pick);
+        } else if (action === 'edit') {
+            const field = await promptNewCustomField(pick, getEditValue(pick));
+            if (field) {
+                onEdit(pick, field.config);
+                p.log.info(pc.cyan(`Updated: ${pick}`));
+            }
+        }
+    }
+}
 
 async function promptNewCustomField(existingKey = null, existingConfig = null) {
     const isEdit = existingKey !== null;
@@ -250,36 +283,12 @@ async function runFieldsForSection(box, section) {
 
     // Manage existing custom fields
     if (customFields.length > 0) {
-        while (true) {
-            const pick = await p.select({
-                message: 'Custom fields:',
-                options: [
-                    ...customFields.map((f) => ({ value: f.key, label: `${f.key} (${f.config?.label ?? ''})` })),
-                    { value: '__done', label: 'Done managing' },
-                ],
-            });
-            if (p.isCancel(pick)) cancel();
-            if (pick === '__done') break;
-
-            const action = await p.select({
-                message: `"${pick}"`,
-                options: [
-                    { value: 'keep',   label: 'Keep' },
-                    { value: 'edit',   label: 'Edit' },
-                    { value: 'remove', label: 'Remove' },
-                ],
-            });
-            if (p.isCancel(action)) cancel();
-            if (action === 'remove') {
-                delete newConfig[pick];
-            } else if (action === 'edit') {
-                const field = await promptNewCustomField(pick, newConfig[pick]);
-                if (field) {
-                    newConfig[pick] = field.config;
-                    p.log.info(pc.cyan(`Updated: ${pick}`));
-                }
-            }
-        }
+        await promptManageCustomFields(customFields, {
+            getLabel: (f) => f.config?.label ?? '',
+            getEditValue: (key) => newConfig[key],
+            onEdit: (key, config) => { newConfig[key] = config; },
+            onRemove: (key) => { delete newConfig[key]; },
+        });
     }
 
     // Add new custom field
@@ -470,36 +479,12 @@ export async function runBannerFields(banner) {
             }
 
             if (customFields.length > 0) {
-                while (true) {
-                    const pick = await p.select({
-                        message: 'Custom fields:',
-                        options: [
-                            ...customFields.map((f) => ({ value: f.key, label: `${f.key} (${f.inputOptions?.label ?? ''})` })),
-                            { value: '__done', label: 'Done managing' },
-                        ],
-                    });
-                    if (p.isCancel(pick)) cancel();
-                    if (pick === '__done') break;
-
-                    const action = await p.select({
-                        message: `"${pick}"`,
-                        options: [
-                            { value: 'keep',   label: 'Keep' },
-                            { value: 'edit',   label: 'Edit' },
-                            { value: 'remove', label: 'Remove' },
-                        ],
-                    });
-                    if (p.isCancel(action)) cancel();
-                    if (action === 'remove') {
-                        delete afterMainConfig[pick];
-                    } else if (action === 'edit') {
-                        const field = await promptNewCustomField(pick, afterMainConfig[pick]?.input_options);
-                        if (field) {
-                            afterMainConfig[pick] = { input_options: field.config };
-                            p.log.info(pc.cyan(`Updated: ${pick}`));
-                        }
-                    }
-                }
+                await promptManageCustomFields(customFields, {
+                    getLabel: (f) => f.inputOptions?.label ?? '',
+                    getEditValue: (key) => afterMainConfig[key]?.input_options,
+                    onEdit: (key, config) => { afterMainConfig[key] = { input_options: config }; },
+                    onRemove: (key) => { delete afterMainConfig[key]; },
+                });
             }
 
             while (true) {

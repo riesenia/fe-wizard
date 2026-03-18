@@ -4,28 +4,8 @@ import { execa } from 'execa';
 import clipboard from 'clipboardy';
 import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, toCamelCase, toLowerCamelCase, cancel, validatePositiveInt } from '../utils.js';
+import { rootDir, toCamelCase, toLowerCamelCase, cancel, getDbConfig, mysqlArgs, promptLimit } from '../utils.js';
 import { writeBoxItemsConfig, writeBoxConfig } from './fields.js';
-
-function parseEnv(content) {
-    const result = {};
-    for (const line of content.split('\n')) {
-        const match = line.match(/^export\s+(\w+)=["']?([^"'\n#]*)["']?/);
-        if (match) result[match[1]] = match[2].trim().replace(/["']/g, '');
-    }
-    return result;
-}
-
-async function getDbConfig() {
-    const envContent = await readFile(join(rootDir, 'config/.env'), 'utf8');
-    const env = parseEnv(envContent);
-    const { DB_HOST = '127.0.0.1', DB_PORT = '3306', DB_USER = 'root', DB_PASS = 'root', DB_NAME } = env;
-    return { DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME };
-}
-
-function mysqlArgs({ DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME }, query) {
-    return [`-h${DB_HOST}`, `-P${DB_PORT}`, `-u${DB_USER}`, `-p${DB_PASS}`, DB_NAME, '-e', query, '--skip-column-names'];
-}
 
 function typeToTable(type) {
     if (type.endsWith('y')) return `rshop_${type.slice(0, -1)}ies`;
@@ -150,28 +130,7 @@ export async function runBox() {
     });
     if (p.isCancel(type)) cancel();
 
-    const limitChoice = await p.select({
-        message: "What's the limit?",
-        options: [
-            { value: '4',  label: '4' },
-            { value: '12', label: '12' },
-            { value: '24', label: '24' },
-            { value: 'custom', label: 'Custom' },
-        ],
-    });
-    if (p.isCancel(limitChoice)) cancel();
-
-    let limit;
-    if (limitChoice === 'custom') {
-        const customLimit = await p.text({
-            message: 'Enter limit:',
-            validate: validatePositiveInt,
-        });
-        if (p.isCancel(customLimit)) cancel();
-        limit = customLimit.trim();
-    } else {
-        limit = limitChoice;
-    }
+    const limit = await promptLimit([4, 12, 24]);
 
     const hasSubitems = await p.confirm({ message: 'Does it have subitems?' });
     if (p.isCancel(hasSubitems)) cancel();
