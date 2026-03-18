@@ -142,6 +142,12 @@ export async function runBanner() {
     await writeFile(join(templateDir, `${templateFileName}.ctp`), buildTemplate(bannerKey));
     createdFiles.push(`src/Template/Plugin/Rshop/Frontend/Cell/Banner/${templateFileName}.ctp`);
 
+    const scssDir = join(rootDir, 'resources/css/components/banners');
+    await mkdir(scssDir, { recursive: true });
+    const scssFileName = `_${templateFileName}.scss`;
+    await writeFile(join(scssDir, scssFileName), buildScss(bannerKey));
+    createdFiles.push(`resources/css/components/banners/${scssFileName}`);
+
     spinner.stop(pc.cyan('Created files:'));
     createdFiles.forEach((f) => p.log.info(pc.dim(`  ${f}`)));
 
@@ -176,11 +182,27 @@ export async function runBanner() {
 }
 
 
+function buildScss(bannerKey) {
+    return `@use "./../../init" as *;\n\n.c-${bannerKey} {\n}\n`;
+}
+
 function buildTemplate(bannerKey) {
-    return `<div class="c-${bannerKey}">
-    <?php foreach ($items as $item) { ?>
-    <div class="c-${bannerKey}__item"></div>
-    <?php } ?>
+    return `<?php
+if (empty($items)) {
+    return;
+}
+?>
+
+<div class="c-${bannerKey}">
+    <?php
+    foreach ($items as $item) {
+        ?>
+        <div class="c-${bannerKey}__item">
+            <?= $item->name; ?>
+        </div>
+        <?php
+    }
+    ?>
 </div>
 `;
 }
