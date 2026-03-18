@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, cancel } from '../utils.js';
+import { rootDir, cancel, fetchEditorPresets } from '../utils.js';
 
 // Default fields from vendor config
 const DEFAULT_FIELDS = [
@@ -164,19 +164,18 @@ async function promptNewCustomField(existingKey = null, existingConfig = null) {
 
     let input;
     if (type === 'editor') {
-        const preset = await p.select({
+        const editorPresets = await fetchEditorPresets();
+        const presetChoice = await p.select({
             message: 'Editor preset:',
             options: [
-                { value: 'extraSimple', label: 'extraSimple' },
-                { value: 'openings',    label: 'openings' },
-                { value: 'default',     label: 'default' },
-                { value: 'custom',      label: 'Custom...' },
+                ...editorPresets.map((v) => ({ value: v, label: v })),
+                { value: 'custom', label: 'Custom...' },
             ],
         });
-        if (p.isCancel(preset)) cancel();
+        if (p.isCancel(presetChoice)) cancel();
 
-        let presetValue = preset;
-        if (preset === 'custom') {
+        let presetValue = presetChoice;
+        if (presetChoice === 'custom') {
             const customPreset = await p.text({
                 message: 'Preset name:',
                 validate: (val) => (!val || !val.trim() ? 'Required' : undefined),

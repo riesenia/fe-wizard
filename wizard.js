@@ -6,6 +6,7 @@ import { cancel } from './utils.js';
 import { runBox, fetchAllBoxes, fetchBoxTypes } from './commands/box.js';
 import { runBoxFields, runBoxSubitemFields, boxHasSubitems, enableBoxSubitems } from './commands/fields.js';
 import { runBoxSeed, checkSeedExists } from './commands/seed.js';
+import { runConfiguration } from './commands/config.js';
 
 p.intro(pc.bold('Welcome to rWizard ✨ '));
 
@@ -125,7 +126,7 @@ const action = await p.select({
     options: [
         { value: 'box',    label: 'Box' },
         { value: 'banner', label: 'Banner place (TBD)' },
-        { value: 'config', label: 'Configuration (TBD)' },
+        { value: 'config', label: 'Configuration' },
         { value: 'quiz',   label: "I'm bored" },
     ],
 });
@@ -134,7 +135,7 @@ if (p.isCancel(action)) cancel();
 if (action) {
     if (action === 'box')         await boxMenu();
     else if (action === 'banner') p.log.warn('Coming soon!');
-    else if (action === 'config') p.log.warn('Coming soon!');
+    else if (action === 'config') await runConfiguration();
     else if (action === 'quiz')   await runQuiz();
 }
 
