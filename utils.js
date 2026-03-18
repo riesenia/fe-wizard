@@ -1,6 +1,10 @@
 import * as p from '@clack/prompts';
+import pc from 'picocolors';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+
+export const FIELD_TYPES      = ['text', 'textarea', 'editor', 'email', 'bool', 'number', 'tel', 'password', 'select', 'color'];
+export const TEXT_FIELD_TYPES = ['text', 'textarea', 'editor'];
 
 export const rootDir = process.cwd();
 
@@ -64,4 +68,61 @@ export async function fetchEditorPresets() {
 export function validatePositiveInt(val) {
     if (!val || !val.trim() || isNaN(Number(val)) || Number(val) <= 0)
         return 'Enter a valid positive number';
+}
+
+export async function promptEditorPreset() {
+    const editorPresets = await fetchEditorPresets();
+    const presetChoice = await p.select({
+        message: 'Editor preset:',
+        options: [
+            ...editorPresets.map((v) => ({ value: v, label: v })),
+            { value: 'custom', label: 'Custom...' },
+        ],
+    });
+    if (p.isCancel(presetChoice)) cancel();
+
+    if (presetChoice === 'custom') {
+        const customPreset = await p.text({
+            message: 'Preset name:',
+            validate: (val) => (!val || !val.trim() ? 'Required' : undefined),
+        });
+        if (p.isCancel(customPreset)) cancel();
+        return customPreset.trim();
+    }
+    return presetChoice;
+}
+
+export async function promptSelectOptions(initialOptions = []) {
+    const options = [...initialOptions];
+    if (options.length > 0) {
+        p.log.info(pc.cyan(`Current options: ${options.map((o) => `${o.key}=${o.value}`).join(', ')}`));
+        const keepExisting = await p.confirm({ message: 'Keep existing options?', initialValue: true });
+        if (p.isCancel(keepExisting)) cancel();
+        if (!keepExisting) options.length = 0;
+    }
+    let addOption = true;
+    while (addOption) {
+        const optionNum = options.length + 1;
+        const optionKey = await p.text({
+            message: `Select option ${optionNum} — key:`,
+            validate: (val) => {
+                if (!val || !val.trim()) return 'Key is required';
+                if (options.some((o) => o.key === val.trim())) return 'Key already used';
+            },
+        });
+        if (p.isCancel(optionKey)) cancel();
+
+        const optionLabel = await p.text({
+            message: `Select option ${optionNum} — label:`,
+            validate: (val) => (!val || !val.trim() ? 'Label is required' : undefined),
+        });
+        if (p.isCancel(optionLabel)) cancel();
+
+        options.push({ key: optionKey.trim(), value: optionLabel.trim() });
+
+        const more = await p.confirm({ message: 'Add another option?', initialValue: true });
+        if (p.isCancel(more)) cancel();
+        addOption = more;
+    }
+    return options;
 }

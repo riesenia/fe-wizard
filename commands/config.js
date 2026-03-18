@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { readdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, toCamelCase, toLowerCamelCase, cancel, fetchEditorPresets } from '../utils.js';
+import { rootDir, toCamelCase, toLowerCamelCase, cancel, FIELD_TYPES, TEXT_FIELD_TYPES, promptEditorPreset, promptSelectOptions } from '../utils.js';
 
 function parseEnv(content) {
     const result = {};
@@ -65,14 +65,15 @@ function buildConfigurationsBlock(configs, groupDotted) {
         if (config.type === 'editor') {
             lines.push(`            'input' => '{"preset":"${config.preset}"}',`);
         } else if (config.type === 'select') {
-            const optionsJson = JSON.stringify(config.options);
-            lines.push(`            'input' => '{"options":${optionsJson}}',`);
+            const kendoData = config.options.map((o) => ({ id: o.key, name: o.value }));
+            const inputJson = JSON.stringify({ kendo: { dataSource: { data: kendoData } } });
+            lines.push(`            'input' => '${inputJson}',`);
         }
 
         return `        [\n${lines.join('\n')}\n        ]`;
     });
 
-    return `    protected $_configurations = [\n${entries.join(',\n')},\n    ];`;
+    return entries.join(',\n') + ',';
 }
 
 export async function runConfiguration() {
@@ -105,14 +106,6 @@ export async function runConfiguration() {
     const isNewGroup = groupChoice === '__new__';
 
     if (isNewGroup) {
-        const nameInput = await p.text({
-            message: 'Group name:',
-            placeholder: 'e.g. Nová skupina',
-            validate: (val) => (!val || !val.trim() ? 'Name is required' : undefined),
-        });
-        if (p.isCancel(nameInput)) cancel();
-        groupName = nameInput.trim();
-
         const keyPattern = isText ? /^text_[a-z][a-z0-9_]*$/ : /^[a-z][a-z0-9_]*$/;
         const keyHint = isText ? 'e.g. text_my_group' : 'e.g. my_group';
         const keyInput = await p.text({
@@ -129,6 +122,14 @@ export async function runConfiguration() {
         if (p.isCancel(keyInput)) cancel();
         groupKey = keyInput.trim();
         group = groupKey;
+
+        const nameInput = await p.text({
+            message: 'Group name:',
+            placeholder: 'e.g. Nová skupina',
+            validate: (val) => (!val || !val.trim() ? 'Name is required' : undefined),
+        });
+        if (p.isCancel(nameInput)) cancel();
+        groupName = nameInput.trim();
     }
 
     const languageDependent = await p.confirm({ message: 'Language dependent?', initialValue: true });
@@ -142,25 +143,8 @@ export async function runConfiguration() {
         : g.replace(/_/g, '.');
     const groupDotted = toGroupDotted(isNewGroup ? groupKey : group);
 
-    const editorPresets = await fetchEditorPresets();
-
-    const typeOptions = isText
-        ? [
-            { value: 'text',     label: 'text' },
-            { value: 'textarea', label: 'textarea' },
-            { value: 'editor',   label: 'editor' },
-          ]
-        : [
-            { value: 'text',     label: 'text' },
-            { value: 'textarea', label: 'textarea' },
-            { value: 'editor',   label: 'editor' },
-            { value: 'email',    label: 'email' },
-            { value: 'bool',     label: 'bool' },
-            { value: 'number',   label: 'number' },
-            { value: 'tel',      label: 'tel' },
-            { value: 'password', label: 'password' },
-            { value: 'select',   label: 'select' },
-          ];
+    const types = isText ? TEXT_FIELD_TYPES : FIELD_TYPES;
+    const typeOptions = types.map((t) => ({ value: t, label: t }));
 
     const configs = [];
     let addMore = true;
@@ -172,13 +156,14 @@ export async function runConfiguration() {
                 message: `Configuration key (full: ${groupDotted}.???):`,
                 validate: (val) => {
                     if (!val || !val.trim()) return 'Key is required';
+                    if (!/^[a-z][a-zA-Z0-9]*$/.test(val.trim())) return 'Must be camelCase (e.g. sliderTitle)';
                     if (configs.some((c) => c.key === val.trim())) return 'Key already used in this migration';
                 },
             });
             if (p.isCancel(keyInput)) cancel();
             const fullKey = `${groupDotted}.${keyInput.trim()}`;
             if (await configKeyExists(fullKey)) {
-                p.log.warn(`"${fullKey}" already exists in the database, choose a different key`);
+                p.log.warn(pc.cyan(`"${fullKey}" already exists in the database, choose a different key`));
                 continue;
             }
             key = keyInput.trim();
@@ -196,54 +181,12 @@ export async function runConfiguration() {
 
         let preset = null;
         if (type === 'editor') {
-            const presetChoice = await p.select({
-                message: 'Editor preset:',
-                options: [
-                    ...editorPresets.map((v) => ({ value: v, label: v })),
-                    { value: 'custom', label: 'Custom...' },
-                ],
-            });
-            if (p.isCancel(presetChoice)) cancel();
-
-            if (presetChoice === 'custom') {
-                const customPreset = await p.text({
-                    message: 'Preset name:',
-                    validate: (val) => (!val || !val.trim() ? 'Required' : undefined),
-                });
-                if (p.isCancel(customPreset)) cancel();
-                preset = customPreset.trim();
-            } else {
-                preset = presetChoice;
-            }
+            preset = await promptEditorPreset();
         }
 
         let options = null;
         if (type === 'select') {
-            options = [];
-            let addOption = true;
-            while (addOption) {
-                const optionNum = options.length + 1;
-                const optionKey = await p.text({
-                    message: `Select option ${optionNum} — key:`,
-                    validate: (val) => {
-                        if (!val || !val.trim()) return 'Key is required';
-                        if (options.some((o) => o.key === val.trim())) return 'Key already used';
-                    },
-                });
-                if (p.isCancel(optionKey)) cancel();
-
-                const optionLabel = await p.text({
-                    message: `Select option ${optionNum} — label:`,
-                    validate: (val) => (!val || !val.trim() ? 'Label is required' : undefined),
-                });
-                if (p.isCancel(optionLabel)) cancel();
-
-                options.push({ key: optionKey.trim(), value: optionLabel.trim() });
-
-                const moreOptions = await p.confirm({ message: 'Add another option?', initialValue: true });
-                if (p.isCancel(moreOptions)) cancel();
-                addOption = moreOptions;
-            }
+            options = await promptSelectOptions();
         }
 
         let value = '';
@@ -303,7 +246,7 @@ export async function runConfiguration() {
 
     spinner.start(`Running: bin/cake bake configuration ${migrationName}`);
     try {
-        await execa('bin/cake', ['bake', 'configuration', migrationName], { cwd: rootDir });
+        await execa('bin/cake', ['bake', 'configuration', migrationName, '--wizard'], { cwd: rootDir });
     } catch (err) {
         spinner.stop('Failed to run bin/cake bake configuration');
         p.log.error(err.stderr || err.message);
@@ -336,20 +279,20 @@ export async function runConfiguration() {
           `                'public' => 1,\n` +
           `                'sort' => \\intval($largestGroupSort) + 1\n` +
           `            ]])\n` +
-          `            ->save();\n\n`
+          `            ->save();\n`
         : '';
 
     const deleteGroupLine = isNewGroup
-        ? `        $this->execute("DELETE FROM rshop_configuration_groups where identifier = '${group}'");\n`
+        ? `\n        $this->execute("DELETE FROM rshop_configuration_groups where identifier = '${group}'");`
         : '';
 
     const updated = original
-        .replace('${configurationsBlock}', configurationsBlock)
+        .replace('        ${configurationsBlock}', configurationsBlock)
         .replace('${groupIdentifier}', group)
         .replace('${languageDependent}', languageDependent ? 1 : 0)
         .replace('${shopDependent}', shopDependent ? 1 : 0)
-        .replace('${newGroupBlock}', newGroupBlock)
-        .replace('${deleteGroupLine}', deleteGroupLine);
+        .replace('        ${newGroupBlock}', newGroupBlock)
+        .replace('        ${deleteGroupLine}', deleteGroupLine);
 
     await writeFile(migrationPath, updated);
     spinner.stop(pc.cyan(`Migration ready: config/Migrations/${migrationFile}`));

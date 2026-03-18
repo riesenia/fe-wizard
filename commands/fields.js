@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, cancel, fetchEditorPresets } from '../utils.js';
+import { rootDir, cancel, FIELD_TYPES, promptEditorPreset, promptSelectOptions } from '../utils.js';
 
 // Default fields from vendor config
 const DEFAULT_FIELDS = [
@@ -11,8 +11,6 @@ const DEFAULT_FIELDS = [
     { key: 'url',   defaultActive: true },
     { key: 'image', defaultActive: true },
 ];
-
-const FIELD_TYPES = ['text', 'upload', 'editor', 'checkbox'];
 
 // ─── PHP helpers ──────────────────────────────────────────────────────────────
 
@@ -162,33 +160,35 @@ async function promptNewCustomField(existingKey = null, existingConfig = null) {
     });
     if (p.isCancel(type)) cancel();
 
-    let input;
+    let editorInput = null;
+    let selectOptions = null;
     if (type === 'editor') {
-        const editorPresets = await fetchEditorPresets();
-        const presetChoice = await p.select({
-            message: 'Editor preset:',
-            options: [
-                ...editorPresets.map((v) => ({ value: v, label: v })),
-                { value: 'custom', label: 'Custom...' },
-            ],
-        });
-        if (p.isCancel(presetChoice)) cancel();
-
-        let presetValue = presetChoice;
-        if (presetChoice === 'custom') {
-            const customPreset = await p.text({
-                message: 'Preset name:',
-                validate: (val) => (!val || !val.trim() ? 'Required' : undefined),
-            });
-            if (p.isCancel(customPreset)) cancel();
-            presetValue = customPreset.trim();
+        const preset = await promptEditorPreset();
+        editorInput = `{"preset":"${preset}"}`;
+    } else if (type === 'select') {
+        // Resolve initial options from existing config (supports kendo.dataSource.data, options object, and old JSON input formats)
+        let initialOptions = [];
+        if (existingConfig?.kendo?.dataSource?.data) {
+            initialOptions = existingConfig.kendo.dataSource.data.map((item) => ({ key: item.id, value: item.name }));
+        } else if (existingConfig?.options && typeof existingConfig.options === 'object') {
+            initialOptions = Object.entries(existingConfig.options).map(([k, v]) => ({ key: k, value: v }));
+        } else if (existingConfig?.input) {
+            try {
+                const parsed = JSON.parse(existingConfig.input);
+                if (Array.isArray(parsed.options)) initialOptions = parsed.options;
+            } catch { /* ignore */ }
         }
-        input = `{"preset":"${presetValue}"}`;
+        selectOptions = await promptSelectOptions(initialOptions);
     }
 
     const fieldConfig = { label: label.trim() };
     if (type !== 'text') fieldConfig.type = type;
-    if (input) fieldConfig.input = input;
+    if (editorInput) fieldConfig.input = editorInput;
+    // Store select options as kendo.dataSource.data array — IDs are stored as string VALUES (not PHP array keys),
+    // so PHP integer coercion never occurs and SelectWidget.php receives proper string IDs.
+    if (selectOptions) {
+        fieldConfig.kendo = { dataSource: { data: selectOptions.map((o) => ({ id: o.key, name: o.value })) } };
+    }
 
     return { key: `module_data.${suffix.trim()}`, config: fieldConfig };
 }
@@ -351,4 +351,181 @@ export async function runBoxFields(box) {
 
 export async function runBoxSubitemFields(box) {
     return runFieldsForSection(box, 'boxSubitems');
+}
+
+// ─── Banner fields ─────────────────────────────────────────────────────────────
+
+export const BANNER_ITEM_BLOCKS = [
+    { block: 'banner_place_item_main',  fields: ['name', 'description', 'type', 'url', 'target_blank'] },
+    { block: 'banner_place_item_files', fields: ['desktop', 'tablet', 'phone'] },
+    { block: 'banner_place_item_video', fields: ['video'] },
+    { block: 'banner_place_item_other', fields: ['valid_from', 'valid_until'] },
+];
+
+async function readVendorBannerDefaults() {
+    try {
+        const content = await readFile(
+            join(rootDir, 'vendor/rshop/admin/config/rshop_admin.php'), 'utf8'
+        );
+
+        const bpiIdx = content.indexOf("'bannerPlaceItems'");
+        if (bpiIdx === -1) return null;
+
+        const bpiBracket = content.indexOf('[', bpiIdx);
+        const bpiSlice = content.slice(bpiBracket, findArrayEnd(content, bpiBracket) + 1);
+
+        const defaultIdx = bpiSlice.indexOf("'default'");
+        if (defaultIdx === -1) return null;
+
+        const defaultBracket = bpiSlice.indexOf('[', defaultIdx);
+        const defaultSlice = bpiSlice.slice(defaultBracket, findArrayEnd(bpiSlice, defaultBracket) + 1);
+
+        const result = {};
+        const blockRegex = /'(banner_place_item_\w+)'\s*=>\s*\[/g;
+        let blockMatch;
+        while ((blockMatch = blockRegex.exec(defaultSlice)) !== null) {
+            const bracketPos = defaultSlice.indexOf('[', blockMatch.index + blockMatch[0].length - 1);
+            const blockSlice = defaultSlice.slice(bracketPos, findArrayEnd(defaultSlice, bracketPos) + 1);
+            result[blockMatch[1]] = {};
+            const fieldRegex = /'(\w+)'\s*=>\s*\[\s*'active'\s*=>\s*(true|false)\s*\]/g;
+            let fieldMatch;
+            while ((fieldMatch = fieldRegex.exec(blockSlice)) !== null) {
+                result[blockMatch[1]][fieldMatch[1]] = { active: fieldMatch[2] === 'true' };
+            }
+        }
+
+        return result;
+    } catch {
+        return null;
+    }
+}
+
+function isBannerFieldActive(block, field, appConfig, vendorDefaults) {
+    if (appConfig?.[block]?.[field]?.active !== undefined) return appConfig[block][field].active;
+    if (vendorDefaults?.[block]?.[field]?.active !== undefined) return vendorDefaults[block][field].active;
+    return true;
+}
+
+export async function writeBannerItemsConfig(bannerKey, config) {
+    return writeBoxConfig('bannerPlaceItems', bannerKey, config);
+}
+
+async function readBannerItemsConfig(bannerKey) {
+    return readBoxConfig('bannerPlaceItems', bannerKey);
+}
+
+export async function runBannerFields(banner) {
+    const spinner = p.spinner();
+    spinner.start('Reading current config...');
+    let appConfig, vendorDefaults;
+    try {
+        [appConfig, vendorDefaults] = await Promise.all([
+            readBannerItemsConfig(banner.bannerKey),
+            readVendorBannerDefaults(),
+        ]);
+        spinner.stop(pc.cyan(appConfig ? 'Loaded existing config' : 'No config yet, using defaults'));
+    } catch (err) {
+        spinner.stop(pc.red('Failed to read config'));
+        p.log.error(err.message);
+        return;
+    }
+
+    const newConfig = {};
+
+    for (const { block, fields } of BANNER_ITEM_BLOCKS) {
+        const activeFields = fields.filter((field) => isBannerFieldActive(block, field, appConfig, vendorDefaults));
+
+        const toggled = await p.multiselect({
+            message: `${block}:`,
+            options: fields.map((f) => ({ value: f, label: f })),
+            initialValues: activeFields,
+            required: false,
+        });
+        if (p.isCancel(toggled)) cancel();
+
+        const blockConfig = {};
+        for (const field of fields) {
+            const vendorDefault = vendorDefaults?.[block]?.[field]?.active ?? true;
+            const isChecked = toggled.includes(field);
+            // Only write overrides that differ from the vendor default
+            if (isChecked !== vendorDefault) {
+                blockConfig[field] = { active: isChecked };
+            }
+        }
+
+        if (Object.keys(blockConfig).length > 0) {
+            newConfig[block] = blockConfig;
+        }
+
+        if (block === 'banner_place_item_main') {
+            // Admin format: { input_options: { label, type, input } } — needed for Hash::merge in form_base.ctp
+            const existingAfterMain = appConfig?.banner_place_item_after_main ?? {};
+            const customFields = Object.entries(existingAfterMain)
+                .filter(([k]) => k.startsWith('module_data.'))
+                .map(([k, v]) => ({ key: k, inputOptions: v?.input_options ?? v ?? {} }));
+
+            const afterMainConfig = {};
+            for (const { key, inputOptions } of customFields) {
+                afterMainConfig[key] = { input_options: inputOptions };
+            }
+
+            if (customFields.length > 0) {
+                while (true) {
+                    const pick = await p.select({
+                        message: 'Custom fields:',
+                        options: [
+                            ...customFields.map((f) => ({ value: f.key, label: `${f.key} (${f.inputOptions?.label ?? ''})` })),
+                            { value: '__done', label: 'Done managing' },
+                        ],
+                    });
+                    if (p.isCancel(pick)) cancel();
+                    if (pick === '__done') break;
+
+                    const action = await p.select({
+                        message: `"${pick}"`,
+                        options: [
+                            { value: 'keep',   label: 'Keep' },
+                            { value: 'edit',   label: 'Edit' },
+                            { value: 'remove', label: 'Remove' },
+                        ],
+                    });
+                    if (p.isCancel(action)) cancel();
+                    if (action === 'remove') {
+                        delete afterMainConfig[pick];
+                    } else if (action === 'edit') {
+                        const field = await promptNewCustomField(pick, afterMainConfig[pick]?.input_options);
+                        if (field) {
+                            afterMainConfig[pick] = { input_options: field.config };
+                            p.log.info(pc.cyan(`Updated: ${pick}`));
+                        }
+                    }
+                }
+            }
+
+            while (true) {
+                const addNew = await p.confirm({ message: 'Add a custom field (module_data.*)?', initialValue: false });
+                if (p.isCancel(addNew)) cancel();
+                if (!addNew) break;
+
+                const field = await promptNewCustomField();
+                if (field) {
+                    afterMainConfig[field.key] = { input_options: field.config };
+                    p.log.info(pc.cyan(`Added: ${field.key}`));
+                }
+            }
+
+            if (Object.keys(afterMainConfig).length > 0) {
+                newConfig['banner_place_item_after_main'] = afterMainConfig;
+            }
+        }
+    }
+
+    spinner.start('Writing config/rshop.php...');
+    try {
+        await writeBannerItemsConfig(banner.bannerKey, newConfig);
+        spinner.stop(pc.cyan('config/rshop.php updated ✨'));
+    } catch (err) {
+        spinner.stop(pc.red('Failed to write config'));
+        p.log.error(err.message);
+    }
 }

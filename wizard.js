@@ -4,9 +4,10 @@ import pc from 'picocolors';
 import { runQuiz } from './commands/quiz.js';
 import { cancel } from './utils.js';
 import { runBox, fetchAllBoxes, fetchBoxTypes } from './commands/box.js';
-import { runBoxFields, runBoxSubitemFields, boxHasSubitems, enableBoxSubitems } from './commands/fields.js';
+import { runBoxFields, runBoxSubitemFields, boxHasSubitems, enableBoxSubitems, runBannerFields } from './commands/fields.js';
 import { runBoxSeed, checkSeedExists } from './commands/seed.js';
 import { runConfiguration } from './commands/config.js';
+import { runBanner, fetchAllBanners } from './commands/banner.js';
 
 p.intro(pc.bold('Welcome to rWizard ✨ '));
 
@@ -81,6 +82,74 @@ async function boxActions(box) {
     }
 }
 
+async function bannerActions(banner) {
+    const done = new Set();
+
+    while (true) {
+        const label = (value, text) => done.has(value) ? `${text} ${pc.green('✓')}` : text;
+
+        const action = await p.select({
+            message: `🎯 "${banner.name}" — what's next?`,
+            options: [
+                { value: 'fields', label: label('fields', 'Update bannerPlaceItems fields') },
+                { value: 'bye',    label: 'Bye-bye 👋' },
+            ],
+        });
+
+        if (p.isCancel(action)) cancel();
+
+        if (action === 'bye') {
+            p.outro(pc.dim('See you next time!'));
+            process.exit(0);
+        }
+
+        if (action === 'fields') {
+            await runBannerFields(banner);
+            done.add('fields');
+        }
+    }
+}
+
+async function bannerMenu() {
+    while (true) {
+        const action = await p.select({
+            message: 'Banner place',
+            options: [
+                { value: 'create', label: 'Create' },
+                { value: 'edit',   label: 'Edit' },
+            ],
+        });
+
+        if (p.isCancel(action)) cancel();
+
+        if (action === 'create') {
+            const banner = await runBanner();
+            await bannerActions(banner);
+        } else if (action === 'edit') {
+            const spinner = p.spinner();
+            spinner.start('Loading banners...');
+            let banners;
+            try {
+                banners = await fetchAllBanners();
+                spinner.stop(pc.cyan(`Loaded ${banners.length} banners`));
+            } catch (err) {
+                spinner.stop(pc.red('Failed to load banners'));
+                p.log.error(err.message);
+                continue;
+            }
+
+            const bannerKey = await p.select({
+                message: 'Select a banner place',
+                options: banners.map((b) => ({ value: b.bannerKey, label: `${b.bannerKey} (${b.name})` })),
+            });
+            if (p.isCancel(bannerKey)) cancel();
+
+            const banner = banners.find((b) => b.bannerKey === bannerKey);
+            await bannerActions(banner);
+        }
+    }
+}
+
 async function boxMenu() {
     while (true) {
         const action = await p.select({
@@ -125,7 +194,7 @@ const action = await p.select({
     message: 'Hi! With what can I help you?',
     options: [
         { value: 'box',    label: 'Box' },
-        { value: 'banner', label: 'Banner place (TBD)' },
+        { value: 'banner', label: 'Banner place' },
         { value: 'config', label: 'Configuration' },
         { value: 'quiz',   label: "I'm bored" },
     ],
@@ -134,7 +203,7 @@ const action = await p.select({
 if (p.isCancel(action)) cancel();
 if (action) {
     if (action === 'box')         await boxMenu();
-    else if (action === 'banner') p.log.warn('Coming soon!');
+    else if (action === 'banner') await bannerMenu();
     else if (action === 'config') await runConfiguration();
     else if (action === 'quiz')   await runQuiz();
 }

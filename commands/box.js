@@ -188,10 +188,10 @@ export async function runBox() {
     const migrationName = `CustomBox${toCamelCase(boxKey)}`;
     const templateFileName = boxKey.replace(/-/g, '_');
 
-    spinner.start(`Running: bin/cake bake boxes ${migrationName}`);
+    spinner.start(`Running: bin/cake bake boxes ${migrationName} --wizard`);
 
     try {
-        await execa('bin/cake', ['bake', 'boxes', migrationName], { cwd: rootDir });
+        await execa('bin/cake', ['bake', 'boxes', migrationName, '--wizard'], { cwd: rootDir });
     } catch (err) {
         spinner.stop('Failed to run bin/cake bake boxes');
         p.log.error(err.stderr || err.message);
@@ -234,15 +234,19 @@ export async function runBox() {
     spinner.stop(pc.cyan('Created files:'));
     createdFiles.forEach((f) => p.log.info(pc.dim(`  ${f}`)));
 
-    spinner.start('Running: bin/cake migrations migrate');
-    try {
-        await execa('bin/cake', ['migrations', 'migrate'], { cwd: rootDir });
-    } catch (err) {
-        spinner.stop('Migration failed');
-        p.log.error(err.stderr || err.message);
-        process.exit(1);
+    const runMigrate = await p.confirm({ message: 'Run migrations now?', initialValue: true });
+    if (p.isCancel(runMigrate)) cancel();
+
+    if (runMigrate) {
+        spinner.start('Running: bin/cake migrations migrate');
+        try {
+            await execa('bin/cake', ['migrations', 'migrate'], { cwd: rootDir });
+            spinner.stop(pc.cyan('Migration applied!'));
+        } catch (err) {
+            spinner.stop(pc.red('Migration failed'));
+            p.log.error(err.stderr || err.message);
+        }
     }
-    spinner.stop(pc.cyan('Migration applied!'));
 
     if (type !== 'custom' || subitemsType) {
         spinner.start('Saving config to config/rshop.php...');
