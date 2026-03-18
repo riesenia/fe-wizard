@@ -1,5 +1,5 @@
 {
-  "name": "r-wizard",
+  "name": "@riesenia/r-wizard",
   "version": "0.1.0",
   "description": "Interactive CLI wizard for rShop development tasks",
   "license": "MIT",
@@ -7,9 +7,12 @@
   "engines": {
     "node": ">=18"
   },
-  "bin": {
-    "r-wizard": "./wizard.js"
-  },
+  "files": [
+    "wizard.js",
+    "utils.js",
+    "commands/"
+  ],
+  "bin": "./wizard.js",
   "dependencies": {
     "@clack/prompts": "^1.0.1",
     "clipboardy": "^5.3.1",
