@@ -8,6 +8,27 @@ import { runBoxFields, runBoxSubitemFields, boxHasSubitems, enableBoxSubitems, r
 import { runBoxSeed, checkSeedExists } from './commands/seed.js';
 import { runConfiguration } from './commands/config.js';
 import { runBanner, fetchAllBanners } from './commands/banner.js';
+import { runProdWizard } from './commands/prod.js';
+import { runInitWizard } from './commands/init.js';
+
+const mode = process.argv[2] ?? 'dev';
+
+if (!['dev', 'prod', 'init'].includes(mode)) {
+    console.error(`Unknown mode: "${mode}". Valid modes: dev, prod, init`);
+    process.exit(1);
+}
+
+if (mode === 'prod') {
+    await runProdWizard();
+    process.exit(0);
+}
+
+if (mode === 'init') {
+    await runInitWizard();
+    process.exit(0);
+}
+
+async function runDevWizard() {
 
 p.intro(pc.bold('Welcome to rWizard ✨ '));
 
@@ -208,3 +229,7 @@ if (action) {
 }
 
 p.outro(pc.dim('See you next time!'));
+
+} // end runDevWizard
+
+await runDevWizard();
