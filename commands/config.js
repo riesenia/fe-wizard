@@ -58,7 +58,7 @@ function buildConfigurationsBlock(configs, groupDotted) {
 
 export async function runConfiguration() {
     const isText = await p.confirm({ message: 'Is it a Text configuration?', initialValue: true });
-    if (p.isCancel(isText)) cancel();
+    if (p.isCancel(isText)) return;
 
     const spinner = p.spinner();
     spinner.start('Fetching configuration groups...');
@@ -78,7 +78,7 @@ export async function runConfiguration() {
     ];
 
     const groupChoice = await p.select({ message: 'Configuration group:', options: groupOptions });
-    if (p.isCancel(groupChoice)) cancel();
+    if (p.isCancel(groupChoice)) return;
 
     let group = groupChoice;
     let groupName = null;
@@ -99,7 +99,7 @@ export async function runConfiguration() {
                 }
             },
         });
-        if (p.isCancel(keyInput)) cancel();
+        if (p.isCancel(keyInput)) return;
         groupKey = keyInput.trim();
         group = groupKey;
 
@@ -108,15 +108,15 @@ export async function runConfiguration() {
             placeholder: 'e.g. Nová skupina',
             validate: (val) => (!val || !val.trim() ? 'Name is required' : undefined),
         });
-        if (p.isCancel(nameInput)) cancel();
+        if (p.isCancel(nameInput)) return;
         groupName = nameInput.trim();
     }
 
     const languageDependent = await p.confirm({ message: 'Language dependent?', initialValue: true });
-    if (p.isCancel(languageDependent)) cancel();
+    if (p.isCancel(languageDependent)) return;
 
     const shopDependent = await p.confirm({ message: 'Shop dependent?', initialValue: false });
-    if (p.isCancel(shopDependent)) cancel();
+    if (p.isCancel(shopDependent)) return;
 
     const toGroupDotted = (g) => isText
         ? `text.${toLowerCamelCase(g.replace(/^text_/, ''))}`
@@ -140,7 +140,7 @@ export async function runConfiguration() {
                     if (configs.some((c) => c.key === val.trim())) return 'Key already used in this migration';
                 },
             });
-            if (p.isCancel(keyInput)) cancel();
+            if (p.isCancel(keyInput)) return;
             const fullKey = `${groupDotted}.${keyInput.trim()}`;
             if (await configKeyExists(fullKey)) {
                 p.log.warn(pc.cyan(`"${fullKey}" already exists in the database, choose a different key`));
@@ -154,10 +154,10 @@ export async function runConfiguration() {
             message: 'Name:',
             validate: (val) => (!val || !val.trim() ? 'Name is required' : undefined),
         });
-        if (p.isCancel(name)) cancel();
+        if (p.isCancel(name)) return;
 
         const type = await p.select({ message: 'Type:', options: typeOptions });
-        if (p.isCancel(type)) cancel();
+        if (p.isCancel(type)) return;
 
         let preset = null;
         if (type === 'editor') {
@@ -178,14 +178,14 @@ export async function runConfiguration() {
                     { value: '1', label: 'Yes' },
                 ],
             });
-            if (p.isCancel(boolChoice)) cancel();
+            if (p.isCancel(boolChoice)) return;
             value = boolChoice;
         } else if (type === 'select' && options?.length) {
             const selectDefault = await p.select({
                 message: 'Default value:',
                 options: options.map((o) => ({ value: o.key, label: `${o.key} (${o.value})` })),
             });
-            if (p.isCancel(selectDefault)) cancel();
+            if (p.isCancel(selectDefault)) return;
             value = selectDefault;
         } else {
             const validate = type === 'number'
@@ -194,21 +194,21 @@ export async function runConfiguration() {
                 ? (val) => (val && val.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ? 'Must be a valid email' : undefined)
                 : undefined;
             const textVal = await p.text({ message: 'Default value:', defaultValue: '', validate });
-            if (p.isCancel(textVal)) cancel();
+            if (p.isCancel(textVal)) return;
             value = textVal ?? '';
         }
 
         let isPublic = true;
         if (!isText) {
             const publicAnswer = await p.confirm({ message: 'Public?', initialValue: true });
-            if (p.isCancel(publicAnswer)) cancel();
+            if (p.isCancel(publicAnswer)) return;
             isPublic = publicAnswer;
         }
 
         configs.push({ key: key.trim(), name: name.trim(), value: value ?? '', type, public: isPublic, preset, options });
 
         const more = await p.confirm({ message: 'Add another configuration?', initialValue: true });
-        if (p.isCancel(more)) cancel();
+        if (p.isCancel(more)) return;
         addMore = more;
     }
 
@@ -288,7 +288,7 @@ export async function runConfiguration() {
     );
 
     const runMigrate = await p.confirm({ message: 'Run migrations now?', initialValue: true });
-    if (p.isCancel(runMigrate)) cancel();
+    if (p.isCancel(runMigrate)) return;
 
     if (runMigrate) {
         spinner.start('Running: bin/cake migrations migrate');

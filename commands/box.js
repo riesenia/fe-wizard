@@ -66,7 +66,7 @@ export async function runBox() {
                     return 'Use lowercase letters, numbers and hyphens only (e.g. my-box)';
             },
         });
-        if (p.isCancel(input)) cancel();
+        if (p.isCancel(input)) return;
 
         const spinner = p.spinner();
         spinner.start('Checking database...');
@@ -92,7 +92,7 @@ export async function runBox() {
                     { value: 'rename', label: 'Use a different key' },
                 ],
             });
-            if (p.isCancel(choice)) cancel();
+            if (p.isCancel(choice)) return;
 
             if (choice === 'load') {
                 return { name: existing.name, boxKey: input, type: existing.type };
@@ -109,7 +109,7 @@ export async function runBox() {
         message: 'Box name:',
         validate: (val) => (!val || !val.trim() ? 'Name is required' : undefined),
     });
-    if (p.isCancel(name)) cancel();
+    if (p.isCancel(name)) return;
 
     const spinner = p.spinner();
     spinner.start('Fetching box types from database...');
@@ -128,12 +128,12 @@ export async function runBox() {
         message: 'Box type:',
         options: types.map((t) => ({ value: t, label: t })),
     });
-    if (p.isCancel(type)) cancel();
+    if (p.isCancel(type)) return;
 
     const limit = await promptLimit([4, 12, 24]);
 
     const hasSubitems = await p.confirm({ message: 'Does it have subitems?' });
-    if (p.isCancel(hasSubitems)) cancel();
+    if (p.isCancel(hasSubitems)) return;
 
     let subitemsType = null;
     if (hasSubitems) {
@@ -141,7 +141,7 @@ export async function runBox() {
             message: 'Subitem type:',
             options: types.map((t) => ({ value: t, label: t })),
         });
-        if (p.isCancel(subitemsType)) cancel();
+        if (p.isCancel(subitemsType)) return;
     }
 
     const migrationName = `CustomBox${toCamelCase(boxKey)}`;
@@ -194,7 +194,7 @@ export async function runBox() {
     createdFiles.forEach((f) => p.log.info(pc.dim(`  ${f}`)));
 
     const runMigrate = await p.confirm({ message: 'Run migrations now?', initialValue: true });
-    if (p.isCancel(runMigrate)) cancel();
+    if (p.isCancel(runMigrate)) return;
 
     if (runMigrate) {
         spinner.start('Running: bin/cake migrations migrate');

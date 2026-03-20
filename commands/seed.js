@@ -47,7 +47,7 @@ async function resolveIds(type, count, label) {
             { value: 'cycle', label: `Repeat IDs cyclically to fill all ${count} slot(s)` },
         ],
     });
-    if (p.isCancel(choice)) cancel();
+    if (p.isCancel(choice)) return;
 
     return choice === 'cycle' ? cycleIds(ids, count) : ids;
 }
@@ -182,7 +182,7 @@ export async function runBoxSeed(boxKey, type, limit) {
     if (exists) {
         p.log.warn(pc.cyan(`Seed "${seedClassName}.php" already exists`));
         const overwrite = await p.confirm({ message: 'Overwrite?' });
-        if (p.isCancel(overwrite)) cancel();
+        if (p.isCancel(overwrite)) return;
         if (!overwrite) return;
         await unlink(join(rootDir, 'config/Seeds', `${seedClassName}.php`));
     }
@@ -202,12 +202,12 @@ export async function runBoxSeed(boxKey, type, limit) {
             { value: 'custom', label: 'Custom' },
         ],
     });
-    if (p.isCancel(countChoice)) cancel();
+    if (p.isCancel(countChoice)) return;
 
     let count;
     if (countChoice === 'custom') {
         const customCount = await p.text({ message: 'Enter count:', validate: validatePositiveInt });
-        if (p.isCancel(customCount)) cancel();
+        if (p.isCancel(customCount)) return;
         count = Number(customCount);
     } else {
         count = Number(countChoice);
@@ -237,12 +237,12 @@ export async function runBoxSeed(boxKey, type, limit) {
                 { value: 'custom', label: 'Custom' },
             ],
         });
-        if (p.isCancel(subCountChoice)) cancel();
+        if (p.isCancel(subCountChoice)) return;
 
         let perItem;
         if (subCountChoice === 'custom') {
             const customSub = await p.text({ message: 'Enter subitems per item:', validate: validatePositiveInt });
-            if (p.isCancel(customSub)) cancel();
+            if (p.isCancel(customSub)) return;
             perItem = Number(customSub);
         } else {
             perItem = Number(subCountChoice);
@@ -286,7 +286,7 @@ export async function runBoxSeed(boxKey, type, limit) {
     // ── Optionally run ────────────────────────────────────────────────────────
 
     const runNow = await p.confirm({ message: 'Run seed now?' });
-    if (p.isCancel(runNow)) cancel();
+    if (p.isCancel(runNow)) return;
 
     if (runNow) {
         spinner.start(`Running: bin/cake migrations seed --seed ${seedClassName}`);

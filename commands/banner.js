@@ -44,7 +44,7 @@ export async function runBanner() {
                     return 'Use lowercase letters, numbers and hyphens only (e.g. my-banner)';
             },
         });
-        if (p.isCancel(input)) cancel();
+        if (p.isCancel(input)) return;
 
         const spinner = p.spinner();
         spinner.start('Checking database...');
@@ -69,7 +69,7 @@ export async function runBanner() {
                     { value: 'rename', label: 'Use a different key' },
                 ],
             });
-            if (p.isCancel(choice)) cancel();
+            if (p.isCancel(choice)) return;
 
             if (choice === 'load') {
                 return { name: existing.name, bannerKey: input, limit: null };
@@ -86,7 +86,7 @@ export async function runBanner() {
         message: 'Banner name:',
         validate: (val) => (!val || !val.trim() ? 'Name is required' : undefined),
     });
-    if (p.isCancel(name)) cancel();
+    if (p.isCancel(name)) return;
 
     const options = await p.multiselect({
         message: 'Banner options:',
@@ -94,7 +94,7 @@ export async function runBanner() {
         initialValues: ['language_active'],
         required: false,
     });
-    if (p.isCancel(options)) cancel();
+    if (p.isCancel(options)) return;
 
     const limit = await promptLimit([1, 2, 4, 12]);
 
@@ -152,7 +152,7 @@ export async function runBanner() {
     createdFiles.forEach((f) => p.log.info(pc.dim(`  ${f}`)));
 
     const runMigrate = await p.confirm({ message: 'Run migrations now?', initialValue: true });
-    if (p.isCancel(runMigrate)) cancel();
+    if (p.isCancel(runMigrate)) return;
 
     if (runMigrate) {
         spinner.start('Running: bin/cake migrations migrate');

@@ -12,7 +12,7 @@ export async function runProdWizard() {
         ],
     });
 
-    if (p.isCancel(action)) cancel();
+    if (p.isCancel(action)) return;
 
     if (action === 'seed') {
         p.log.info('Coming soon');

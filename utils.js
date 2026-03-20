@@ -8,6 +8,37 @@ export const TEXT_FIELD_TYPES = ['text', 'textarea', 'editor'];
 
 export const rootDir = process.cwd();
 
+// ── Back-navigation (backspace → ESC in non-text prompts) ────────────────────
+
+let _textActive = false;
+
+/** Drop-in for p.text that tracks when text input is active. */
+export async function text(opts) {
+    _textActive = true;
+    try {
+        return await p.text(opts);
+    } finally {
+        _textActive = false;
+    }
+}
+
+/**
+ * Call once at startup. Converts backspace (0x7f) to ESC (0x1b) whenever a
+ * select/multiselect/confirm is active so the user can press backspace to go
+ * back one level. Has no effect during p.text prompts (tracked via `text()`).
+ */
+export function setupBackNavigation() {
+    process.stdin.prependListener('data', (chunk) => {
+        if (chunk.length >= 1 && chunk[0] === 0x03) {
+            p.outro(pc.dim('See you next time! 👋'));
+            process.exit(0);
+        }
+        if (!_textActive && chunk.length >= 1 && chunk[0] === 0x7f) {
+            chunk[0] = 0x1b;
+        }
+    });
+}
+
 export function toCamelCase(str) {
     return str
         .split(/[-_]/)

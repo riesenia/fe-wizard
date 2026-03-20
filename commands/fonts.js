@@ -301,7 +301,7 @@ async function askGoogleFontsUrl(savedUrl) {
                 { value: 'new',   label: 'Enter a new URL' },
             ],
         });
-        if (p.isCancel(choice)) cancel();
+        if (p.isCancel(choice)) return;
         if (choice === 'saved') return savedUrl;
     }
 
@@ -313,7 +313,7 @@ async function askGoogleFontsUrl(savedUrl) {
             if (!val.includes('fonts.googleapis.com')) return 'Must be a fonts.googleapis.com URL';
         },
     });
-    if (p.isCancel(url)) cancel();
+    if (p.isCancel(url)) return;
     return url.trim();
 }
 
@@ -350,7 +350,7 @@ async function addNewFont() {
     );
 
     const confirm = await p.confirm({ message: `Download and add "${fontName}"?`, initialValue: true });
-    if (p.isCancel(confirm)) cancel();
+    if (p.isCancel(confirm)) return;
     if (!confirm) return;
 
     await downloadAndApply(fontName, url);
@@ -394,10 +394,10 @@ async function handleFontActions(font) {
     if (font.status === 'enabled')  options.push({ value: 'disable', label: 'Disable font' });
     options.push({ value: 'refetch', label: 'Refetch from Google Fonts' });
     if (font.blocks.length || font.folderExists) options.push({ value: 'remove', label: pc.red('Remove font') });
-    options.push({ value: 'back', label: 'Back' });
+    options.push({ value: 'back', label: '↩ Back' });
 
     const action = await p.select({ message: `"${font.name}" — what's next?`, options });
-    if (p.isCancel(action)) cancel();
+    if (p.isCancel(action)) return;
     if (action === 'back') return;
 
     if (action === 'refetch') {
@@ -431,7 +431,7 @@ async function handleFontActions(font) {
             message: `Delete all files and SCSS definitions for "${font.name}"?`,
             initialValue: false,
         });
-        if (p.isCancel(confirm)) cancel();
+        if (p.isCancel(confirm)) return;
         if (!confirm) return;
 
         for (const block of font.blocks) {
@@ -471,12 +471,12 @@ export async function runFontFamilies() {
                 value: f.name,
                 label: `${f.name} [${statusLabel(f.status)}]`,
             })),
-            { value: '__add__',  label: '+ Add new font family' },
-            { value: '__back__', label: 'Back' },
+            { value: '__add__',  label: '+ Add' },
+            { value: '__back__', label: '↩ Back' },
         ];
 
         const choice = await p.select({ message: 'Font families:', options });
-        if (p.isCancel(choice)) cancel();
+        if (p.isCancel(choice)) return;
         if (choice === '__back__') return;
 
         if (choice === '__add__') {

@@ -2,7 +2,8 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { runQuiz } from './commands/quiz.js';
-import { cancel } from './utils.js';
+import { cancel, setupBackNavigation } from './utils.js';
+setupBackNavigation();
 import { runBox, fetchAllBoxes, fetchBoxTypes } from './commands/box.js';
 import { runBoxFields, runBoxSubitemFields, boxHasSubitems, enableBoxSubitems, runBannerFields } from './commands/fields.js';
 import { runBoxSeed, checkSeedExists } from './commands/seed.js';
@@ -55,7 +56,7 @@ async function boxActions(box) {
             options,
         });
 
-        if (p.isCancel(action)) cancel();
+        if (p.isCancel(action)) return;
 
         if (action === 'bye') {
             p.outro(pc.dim('See you next time!'));
@@ -85,7 +86,7 @@ async function boxActions(box) {
                 message: 'Subitem type:',
                 options: types.map((t) => ({ value: t, label: t })),
             });
-            if (p.isCancel(subitemsType)) cancel();
+            if (p.isCancel(subitemsType)) return;
 
             spinner.start('Saving to config/rshop.php...');
             try {
@@ -116,7 +117,7 @@ async function bannerActions(banner) {
             ],
         });
 
-        if (p.isCancel(action)) cancel();
+        if (p.isCancel(action)) return;
 
         if (action === 'bye') {
             p.outro(pc.dim('See you next time!'));
@@ -140,7 +141,7 @@ async function bannerMenu() {
             ],
         });
 
-        if (p.isCancel(action)) cancel();
+        if (p.isCancel(action)) return;
 
         if (action === 'create') {
             const banner = await runBanner();
@@ -162,7 +163,7 @@ async function bannerMenu() {
                 message: 'Select a banner place',
                 options: banners.map((b) => ({ value: b.bannerKey, label: `${b.bannerKey} (${b.name})` })),
             });
-            if (p.isCancel(bannerKey)) cancel();
+            if (p.isCancel(bannerKey)) return;
 
             const banner = banners.find((b) => b.bannerKey === bannerKey);
             await bannerActions(banner);
@@ -180,7 +181,7 @@ async function boxMenu() {
             ],
         });
 
-        if (p.isCancel(action)) cancel();
+        if (p.isCancel(action)) return;
 
         if (action === 'create') {
             const box = await runBox();
@@ -202,7 +203,7 @@ async function boxMenu() {
                 message: 'Select a box',
                 options: boxes.map((b) => ({ value: b.boxKey, label: `${b.boxKey} (${b.name})` })),
             });
-            if (p.isCancel(boxKey)) cancel();
+            if (p.isCancel(boxKey)) return;
 
             const box = boxes.find((b) => b.boxKey === boxKey);
             await boxActions(box);
@@ -220,7 +221,7 @@ const action = await p.select({
     ],
 });
 
-if (p.isCancel(action)) cancel();
+if (p.isCancel(action)) return;
 if (action) {
     if (action === 'box')         await boxMenu();
     else if (action === 'banner') await bannerMenu();

@@ -3,8 +3,9 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
-import { cancel, rootDir, getDbConfig, mysqlArgs } from '../utils.js';
+import { cancel, text, rootDir, getDbConfig, mysqlArgs } from '../utils.js';
 import { runFontFamilies } from './fonts.js';
+import { runLocales } from './locales.js';
 
 const LOGIN_CTP_REL = 'src/Template/Plugin/Rshop/Core/AdminUsers/login.ctp';
 
@@ -90,7 +91,7 @@ async function handleLoginCtp(storeName) {
         message: `Update to use Configure::read('Rshop.store.name')?`,
         initialValue: true,
     });
-    if (p.isCancel(update)) cancel();
+    if (p.isCancel(update)) return;
 
     if (update) {
         let newContent = withUseStatement(content);
@@ -134,25 +135,25 @@ async function runBaseConfigurations() {
                 value: config.key,
                 label: `${config.label}: ${values[i] !== null ? pc.cyan(values[i]) : pc.dim('not set')}`,
             })),
-            { value: '__back__', label: 'Back' },
+            { value: '__back__', label: '↩ Back' },
         ];
 
         const choice = await p.select({
             message: 'Base configurations — select to edit:',
             options,
         });
-        if (p.isCancel(choice)) cancel();
+        if (p.isCancel(choice)) return;
         if (choice === '__back__') return;
 
         const idx = BASE_CONFIGS.findIndex((c) => c.key === choice);
         const config = BASE_CONFIGS[idx];
 
-        const newValue = await p.text({
+        const newValue = await text({
             message: `${config.label}:`,
             initialValue: values[idx] ?? '',
             validate: (val) => (!val || !val.trim() ? 'Value is required' : undefined),
         });
-        if (p.isCancel(newValue)) cancel();
+        if (p.isCancel(newValue)) return;
         const trimmed = newValue.trim();
 
         const s = p.spinner();
@@ -202,16 +203,18 @@ export async function runInitWizard() {
         const action = await p.select({
             message: 'Hi! With what can I help you?',
             options: [
-                { value: 'base-config', label: 'Set base Configurations' },
-                { value: 'fonts',       label: 'Set Font Families' },
+                { value: 'base-config', label: 'Base Configurations' },
+                { value: 'fonts',       label: 'Font Families' },
+                { value: 'locales',     label: 'Domains, Countries, Currencies, Languages & Multishop' },
                 { value: 'bye',         label: 'Bye-bye 👋' },
             ],
         });
-        if (p.isCancel(action)) cancel();
+        if (p.isCancel(action)) return;
 
         if (action === 'bye') break;
         if (action === 'base-config') await runBaseConfigurations();
         if (action === 'fonts')       await runFontFamilies();
+        if (action === 'locales')     await runLocales();
     }
 
     p.outro(pc.dim('See you next time!'));

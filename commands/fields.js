@@ -135,7 +135,7 @@ async function promptManageCustomFields(customFields, { getLabel, getEditValue, 
                 { value: '__done', label: 'Done managing' },
             ],
         });
-        if (p.isCancel(pick)) cancel();
+        if (p.isCancel(pick)) return;
         if (pick === '__done') break;
 
         const action = await p.select({
@@ -146,7 +146,7 @@ async function promptManageCustomFields(customFields, { getLabel, getEditValue, 
                 { value: 'remove', label: 'Remove' },
             ],
         });
-        if (p.isCancel(action)) cancel();
+        if (p.isCancel(action)) return;
         if (action === 'remove') {
             onRemove(pick);
         } else if (action === 'edit') {
@@ -174,7 +174,7 @@ async function promptNewCustomField(existingKey = null, existingConfig = null) {
                 if (!/^[a-z0-9_]+$/.test(val)) return 'Use lowercase letters, numbers and underscores only';
             },
         });
-        if (p.isCancel(input)) cancel();
+        if (p.isCancel(input)) return;
         suffix = input;
     }
 
@@ -183,7 +183,7 @@ async function promptNewCustomField(existingKey = null, existingConfig = null) {
         initialValue: existingConfig?.label ?? undefined,
         validate: (val) => (!val || !val.trim() ? 'Required' : undefined),
     });
-    if (p.isCancel(label)) cancel();
+    if (p.isCancel(label)) return;
 
     const currentType = existingConfig?.type ?? 'text';
     const type = await p.select({
@@ -191,7 +191,7 @@ async function promptNewCustomField(existingKey = null, existingConfig = null) {
         options: FIELD_TYPES.map((t) => ({ value: t, label: t })),
         initialValue: currentType,
     });
-    if (p.isCancel(type)) cancel();
+    if (p.isCancel(type)) return;
 
     let editorInput = null;
     let selectOptions = null;
@@ -251,7 +251,7 @@ async function runFieldsForSection(box, section) {
         initialValues: activeDefaults,
         required: false,
     });
-    if (p.isCancel(toggled)) cancel();
+    if (p.isCancel(toggled)) return;
 
     // Build new config from toggled defaults
     const newConfig = {};
@@ -294,7 +294,7 @@ async function runFieldsForSection(box, section) {
     // Add new custom field
     while (true) {
         const addNew = await p.confirm({ message: 'Add a custom field (module_data.*)?', initialValue: false });
-        if (p.isCancel(addNew)) cancel();
+        if (p.isCancel(addNew)) return;
         if (!addNew) break;
 
         const field = await promptNewCustomField();
@@ -450,7 +450,7 @@ export async function runBannerFields(banner) {
             initialValues: activeFields,
             required: false,
         });
-        if (p.isCancel(toggled)) cancel();
+        if (p.isCancel(toggled)) return;
 
         const blockConfig = {};
         for (const field of fields) {
@@ -489,7 +489,7 @@ export async function runBannerFields(banner) {
 
             while (true) {
                 const addNew = await p.confirm({ message: 'Add a custom field (module_data.*)?', initialValue: false });
-                if (p.isCancel(addNew)) cancel();
+                if (p.isCancel(addNew)) return;
                 if (!addNew) break;
 
                 const field = await promptNewCustomField();
