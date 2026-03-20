@@ -6,6 +6,7 @@ import { join, dirname } from 'path';
 import { cancel, text, rootDir, getDbConfig, mysqlArgs } from '../utils.js';
 import { runFontFamilies } from './fonts.js';
 import { runLocales } from './locales.js';
+import { runInitSeed } from './seed-init.js';
 
 const LOGIN_CTP_REL = 'src/Template/Plugin/Rshop/Core/AdminUsers/login.ctp';
 
@@ -206,6 +207,7 @@ export async function runInitWizard() {
                 { value: 'base-config', label: 'Base Configurations' },
                 { value: 'fonts',       label: 'Font Families' },
                 { value: 'locales',     label: 'Domains, Countries, Currencies, Languages & Multishop' },
+                { value: 'seed-init',   label: 'Create Init seed' },
                 { value: 'bye',         label: 'Bye-bye 👋' },
             ],
         });
@@ -215,6 +217,7 @@ export async function runInitWizard() {
         if (action === 'base-config') await runBaseConfigurations();
         if (action === 'fonts')       await runFontFamilies();
         if (action === 'locales')     await runLocales();
+        if (action === 'seed-init')   await runInitSeed();
     }
 
     p.outro(pc.dim('See you next time!'));
