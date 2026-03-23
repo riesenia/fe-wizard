@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { writeFile, access } from 'fs/promises';
 import { join } from 'path';
-import { rootDir } from '../utils.js';
+import { rootDir, getDbConfig, mysqlArgs } from '../utils.js';
 
 const SEED_FILE = 'config/seed_init.php';
 
@@ -1426,12 +1426,15 @@ function generatePhpContent(typeData, opts, counts) {
 
     const b = (v) => (v ? 'true' : 'false');
 
-    // Build article list: always include legal articles, then pick articleCount blog articles
-    const legalArticles = typeData.articles.filter((a) => a.legal);
-    const blogArticles = typeData.articles.filter((a) => !a.legal);
+    // Build article list filtered to valid section_ids only
+    const selectedSectionIds = new Set(selectedSections.map((s) => s.id));
+    const legalArticles = typeData.articles.filter((a) => a.legal && selectedSectionIds.has(a.section_id));
+    const blogArticles = typeData.articles.filter((a) => !a.legal && selectedSectionIds.has(a.section_id));
     const selectedBlogArticles = [];
-    for (let i = 0; i < articleCount; i++) {
-        selectedBlogArticles.push(blogArticles[i % blogArticles.length]);
+    if (blogArticles.length > 0) {
+        for (let i = 0; i < articleCount; i++) {
+            selectedBlogArticles.push(blogArticles[i % blogArticles.length]);
+        }
     }
     const allArticles = [...legalArticles, ...selectedBlogArticles];
 
@@ -2077,5 +2080,65 @@ export async function runInitSeed() {
     } catch (err) {
         spinner.stop(pc.red('Seed zlyhal'));
         p.log.error(err.all || err.stderr || err.message);
+        return;
+    }
+
+    await runPostSeedSteps();
+}
+
+export async function runPostSeedSteps() {
+    // repairData
+    const repair = await p.confirm({
+        message: `Spustiť bin/cake rshop cron repairData?`,
+        initialValue: true,
+    });
+    if (!p.isCancel(repair) && repair) {
+        const spinner2 = p.spinner();
+        spinner2.start('Spúšťam repairData...');
+        try {
+            const result = await execa('bin/cake', ['rshop', 'cron', 'repairData'], {
+                cwd: rootDir,
+                all: true,
+            });
+            spinner2.stop(pc.cyan('repairData dokončený ✨'));
+            if (result.all) p.log.info(result.all);
+        } catch (err) {
+            spinner2.stop(pc.red('repairData zlyhal'));
+            p.log.error(err.all || err.stderr || err.message);
+        }
+    }
+
+    // reindex (only if search.elastic is configured)
+    let searchConfigured = false;
+    try {
+        const db = await getDbConfig();
+        const { stdout } = await execa('mysql', mysqlArgs(db,
+            `SELECT value FROM rshop_configurations WHERE configuration_key = 'search.elastic' LIMIT 1`
+        ));
+        searchConfigured = stdout.trim().length > 0 && stdout.trim() !== 'NULL';
+    } catch { /* DB not accessible — skip reindex */ }
+
+    if (searchConfigured) {
+        const reindex = await p.confirm({
+            message: `Spustiť bin/cake rshop:reindex?`,
+            initialValue: true,
+        });
+        if (!p.isCancel(reindex) && reindex) {
+            const spinner3 = p.spinner();
+            spinner3.start('Spúšťam reindex...');
+            try {
+                const result = await execa('bin/cake', ['rshop:reindex'], {
+                    cwd: rootDir,
+                    all: true,
+                });
+                spinner3.stop(pc.cyan('Reindex dokončený ✨'));
+                if (result.all) p.log.info(result.all);
+            } catch (err) {
+                spinner3.stop(pc.red('Reindex zlyhal'));
+                p.log.error(err.all || err.stderr || err.message);
+            }
+        }
+    } else {
+        p.log.info(pc.dim('Reindex preskočený — search.elastic nie je nakonfigurovaný.'));
     }
 }
