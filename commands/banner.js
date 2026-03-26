@@ -4,7 +4,7 @@ import { execa } from 'execa';
 import clipboard from 'clipboardy';
 import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, toCamelCase, toLowerCamelCase, cancel, getDbConfig, mysqlArgs, promptLimit } from '../utils.js';
+import { rootDir, toCamelCase, toLowerCamelCase, cancel, text, getDbConfig, mysqlArgs, promptLimit } from '../utils.js';
 
 const BANNER_OPTIONS = [
     'select_category', 'select_product', 'select_campaign',
@@ -36,7 +36,7 @@ export async function runBanner() {
     let bannerKey;
 
     while (true) {
-        const input = await p.text({
+        const input = await text({
             message: 'Banner key (e.g. homepage-top):',
             validate: (val) => {
                 if (!val || !val.trim()) return 'Banner key is required';
@@ -82,7 +82,7 @@ export async function runBanner() {
         break;
     }
 
-    const name = await p.text({
+    const name = await text({
         message: 'Banner name:',
         validate: (val) => (!val || !val.trim() ? 'Name is required' : undefined),
     });

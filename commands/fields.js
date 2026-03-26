@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, cancel, FIELD_TYPES, promptEditorPreset, promptSelectOptions } from '../utils.js';
+import { rootDir, cancel, text, FIELD_TYPES, promptEditorPreset, promptSelectOptions } from '../utils.js';
 
 // Default fields from vendor config
 const DEFAULT_FIELDS = [
@@ -167,7 +167,7 @@ async function promptNewCustomField(existingKey = null, existingConfig = null) {
         suffix = existingKey.replace('module_data.', '');
         p.log.info(pc.cyan(`Editing: ${existingKey}`));
     } else {
-        const input = await p.text({
+        const input = await text({
             message: 'Field key suffix (will be module_data.{suffix}):',
             validate: (val) => {
                 if (!val || !val.trim()) return 'Required';
@@ -178,7 +178,7 @@ async function promptNewCustomField(existingKey = null, existingConfig = null) {
         suffix = input;
     }
 
-    const label = await p.text({
+    const label = await text({
         message: 'Label:',
         initialValue: existingConfig?.label ?? undefined,
         validate: (val) => (!val || !val.trim() ? 'Required' : undefined),

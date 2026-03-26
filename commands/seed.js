@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { readdir, writeFile, access, unlink } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, toCamelCase, cancel, validatePositiveInt } from '../utils.js';
+import { rootDir, toCamelCase, cancel, text, validatePositiveInt } from '../utils.js';
 import { fetchTypeIds } from './box.js';
 import { getSubitemsType, getSeedableFields } from './fields.js';
 
@@ -21,7 +21,7 @@ function cycleIds(ids, count) {
     return Array.from({ length: count }, (_, i) => ids[i % ids.length]);
 }
 
-async function resolveIds(type, count, label) {
+async function resolveIds(type, count, label, allowCycle = true) {
     if (type === 'custom') return null;
 
     const spinner = p.spinner();
@@ -40,6 +40,12 @@ async function resolveIds(type, count, label) {
     }
 
     spinner.stop(pc.yellow(`Only ${ids.length} of ${count} "${type}" record(s) found`));
+
+    if (!allowCycle) {
+        p.log.warn(pc.cyan(`Reduced to ${ids.length} subitems per item (duplicates would violate DB constraints)`));
+        return ids;
+    }
+
     const choice = await p.select({
         message: 'How do you want to proceed?',
         options: [
@@ -206,7 +212,7 @@ export async function runBoxSeed(boxKey, type, limit) {
 
     let count;
     if (countChoice === 'custom') {
-        const customCount = await p.text({ message: 'Enter count:', validate: validatePositiveInt });
+        const customCount = await text({ message: 'Enter count:', validate: validatePositiveInt });
         if (p.isCancel(customCount)) return;
         count = Number(customCount);
     } else {
@@ -241,18 +247,19 @@ export async function runBoxSeed(boxKey, type, limit) {
 
         let perItem;
         if (subCountChoice === 'custom') {
-            const customSub = await p.text({ message: 'Enter subitems per item:', validate: validatePositiveInt });
+            const customSub = await text({ message: 'Enter subitems per item:', validate: validatePositiveInt });
             if (p.isCancel(customSub)) return;
             perItem = Number(customSub);
         } else {
             perItem = Number(subCountChoice);
         }
 
-        const subitemIds = await resolveIds(subitemsType, perItem, 'subitem');
+        const subitemIds = await resolveIds(subitemsType, perItem, 'subitem', false);
         if (subitemIds === false) return;
 
         const subFieldConfig = await getSeedableFields('boxSubitems', boxKey);
-        subOpts = { type: subitemsType, ids: subitemIds, perItem, fieldConfig: subFieldConfig };
+        const effectivePerItem = subitemIds ? subitemIds.length : perItem;
+        subOpts = { type: subitemsType, ids: subitemIds, perItem: effectivePerItem, fieldConfig: subFieldConfig };
     }
 
     // ── Bake + write ──────────────────────────────────────────────────────────

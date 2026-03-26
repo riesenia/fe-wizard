@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { readdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, toCamelCase, toLowerCamelCase, cancel, FIELD_TYPES, TEXT_FIELD_TYPES, promptEditorPreset, promptSelectOptions, getDbConfig, mysqlArgs } from '../utils.js';
+import { rootDir, toCamelCase, toLowerCamelCase, cancel, text, FIELD_TYPES, TEXT_FIELD_TYPES, promptEditorPreset, promptSelectOptions, getDbConfig, mysqlArgs } from '../utils.js';
 
 async function configKeyExists(fullKey) {
     const db = await getDbConfig();
@@ -88,7 +88,7 @@ export async function runConfiguration() {
     if (isNewGroup) {
         const keyPattern = isText ? /^text_[a-z][a-z0-9_]*$/ : /^[a-z][a-z0-9_]*$/;
         const keyHint = isText ? 'e.g. text_my_group' : 'e.g. my_group';
-        const keyInput = await p.text({
+        const keyInput = await text({
             message: `Group identifier (${keyHint}):`,
             validate: (val) => {
                 if (!val || !val.trim()) return 'Identifier is required';
@@ -103,7 +103,7 @@ export async function runConfiguration() {
         groupKey = keyInput.trim();
         group = groupKey;
 
-        const nameInput = await p.text({
+        const nameInput = await text({
             message: 'Group name:',
             placeholder: 'e.g. Nová skupina',
             validate: (val) => (!val || !val.trim() ? 'Name is required' : undefined),
@@ -132,7 +132,7 @@ export async function runConfiguration() {
     while (addMore) {
         let key;
         while (true) {
-            const keyInput = await p.text({
+            const keyInput = await text({
                 message: `Configuration key (full: ${groupDotted}.???):`,
                 validate: (val) => {
                     if (!val || !val.trim()) return 'Key is required';
@@ -150,7 +150,7 @@ export async function runConfiguration() {
             break;
         }
 
-        const name = await p.text({
+        const name = await text({
             message: 'Name:',
             validate: (val) => (!val || !val.trim() ? 'Name is required' : undefined),
         });
@@ -193,7 +193,7 @@ export async function runConfiguration() {
                 : type === 'email'
                 ? (val) => (val && val.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ? 'Must be a valid email' : undefined)
                 : undefined;
-            const textVal = await p.text({ message: 'Default value:', defaultValue: '', validate });
+            const textVal = await text({ message: 'Default value:', defaultValue: '', validate });
             if (p.isCancel(textVal)) return;
             value = textVal ?? '';
         }

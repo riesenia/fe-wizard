@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { execa } from 'execa';
 import { writeFile, access } from 'fs/promises';
 import { join } from 'path';
-import { rootDir, getDbConfig, mysqlArgs } from '../utils.js';
+import { rootDir, text, getDbConfig, mysqlArgs } from '../utils.js';
 
 const SEED_FILE = 'config/seed_init.php';
 
@@ -214,6 +214,32 @@ const ESHOP_TYPES = {
             { id: 23, name: 'Detské potraviny', description: '<p>Špeciálna sekcia pre dojčenské a detské potraviny.</p>' },
             { id: 24, name: 'Sezónny výber', description: '<p>Každú sezónu nové produkty priamo od pestovateľov.</p>' },
         ],
+        testimonials: [
+            { id: 1, name: 'Marta Kováčová', description: '<p>Čerstvé potraviny doručené priamo domov — úžasná služba, odporúčam každému!</p>' },
+            { id: 2, name: 'Jozef Novák', description: '<p>Bio produkty sú skutočne kvalitné a ceny sú veľmi príjemné.</p>' },
+            { id: 3, name: 'Alžbeta Horváthová', description: '<p>Dojčenské potraviny vždy čerstvé a doručené včas. Ďakujem!</p>' },
+            { id: 4, name: 'Rastislav Šimko', description: '<p>Skvelý výber lokálnych produktov. Moje jedlá sú oveľa lepšie vďaka čerstvým surovinám.</p>' },
+            { id: 5, name: 'Katarína Blahová', description: '<p>Proteínové a zdravé produkty vždy skladom. Veľká spokojnosť!</p>' },
+            { id: 6, name: 'Martin Oravec', description: '<p>Objednávka prišla do 24 hodín. Perfektné balenie a čerstvosť.</p>' },
+            { id: 7, name: 'Eva Kráľová', description: '<p>Najlepší online obchod s potravinami na Slovensku. Vždy sa vrátim!</p>' },
+            { id: 8, name: 'Tomáš Bendík', description: '<p>Bezlepkový sortiment je výborný — naša dcéra je konečne spokojná.</p>' },
+            { id: 9, name: 'Lucia Mináčová', description: '<p>Rastlinné alternatívy sú na výber — nikde inde som nenašla taký výber.</p>' },
+            { id: 10, name: 'Peter Jakubec', description: '<p>Cashback program je super, ušetril som už desiatky eur.</p>' },
+            { id: 11, name: 'Zuzana Filipová', description: '<p>Vernostný program je výborný. Nakupujem tu každý týždeň.</p>' },
+            { id: 12, name: 'Roman Gábriš', description: '<p>Ekologické balenie je skvelá iniciatíva. Oceňujem zodpovedný prístup.</p>' },
+            { id: 13, name: 'Helena Baranová', description: '<p>Zákaznícka podpora mi vždy ochotne pomohla s objednávkou.</p>' },
+            { id: 14, name: 'Marek Polák', description: '<p>Lokálni výrobcovia, skvelá kvalita. Podporujem Slovensko!</p>' },
+            { id: 15, name: 'Ivana Horáková', description: '<p>Vrátenie tovaru prebehlo bez akýchkoľvek problémov. Profesionálny prístup.</p>' },
+            { id: 16, name: 'Stanislav Vlček', description: '<p>Sezónne akcie sú fantastické — vždy nájdem niečo za skvelú cenu.</p>' },
+            { id: 17, name: 'Monika Chovanová', description: '<p>Kvalita produktov prevyšuje očakávania. Nakupujem tu už 2 roky.</p>' },
+            { id: 18, name: 'Ondrej Varga', description: '<p>Rýchle doručenie a prehľadný e-shop. Odporúčam priateľom.</p>' },
+            { id: 19, name: 'Barbora Sedláčková', description: '<p>Darčekové balenie je krásne — ideálny darček pre babičku.</p>' },
+            { id: 20, name: 'Vladimír Mešťan', description: '<p>Produkty bez GMO a bez konzervantov. Konečne zdravé nakupovanie!</p>' },
+            { id: 21, name: 'Silvia Nagyová', description: '<p>Predplatné s úsporou je geniálna vec. Šetrím čas aj peniaze.</p>' },
+            { id: 22, name: 'Dušan Krúpa', description: '<p>Čerstvé pečivo každý deň je pre nás rodinu absolútna paráda.</p>' },
+            { id: 23, name: 'Renáta Molnárová', description: '<p>Odborné výživové poradenstvo mi veľmi pomohlo s výberom produktov.</p>' },
+            { id: 24, name: 'Miroslav Lukáč', description: '<p>Bezpečné platby a jednoduchý nákupný proces. Skvelý e-shop!</p>' },
+        ],
     },
 
     toys: {
@@ -396,6 +422,32 @@ const ESHOP_TYPES = {
             { id: 22, name: 'Bezpečný nákup', description: '<p>Overený obchod s tisíckami spokojných zákazníkov.</p>' },
             { id: 23, name: 'Náhradné diely', description: '<p>Dostupné náhradné diely pre vybrané stavebnice.</p>' },
             { id: 24, name: 'Hračky pre špeciálne potreby', description: '<p>Špeciálna ponuka hračiek pre deti so špeciálnymi potrebami.</p>' },
+        ],
+        testimonials: [
+            { id: 1, name: 'Jana Krajčíová', description: '<p>Moje deti sú nadšené! Hračky sú bezpečné a kvalitné. Ďakujem!</p>' },
+            { id: 2, name: 'Peter Záhradník', description: '<p>Darčekové balenie bolo nádherné — syn bol úplne ohromený.</p>' },
+            { id: 3, name: 'Veronika Tóthová', description: '<p>Odborný výber hračiek mi veľmi pomohol — presne vedeli, čo odporučiť 3-ročnému dieťaťu.</p>' },
+            { id: 4, name: 'Ladislav Červenák', description: '<p>Doprava zadarmo a rýchle doručenie. Stavebnica dorazila celá a nepoškodená.</p>' },
+            { id: 5, name: 'Petra Mazánková', description: '<p>STEM hračky sú skvelé — deti sa hrajú a zároveň sa učia.</p>' },
+            { id: 6, name: 'Michal Sloboda', description: '<p>Vrátenie do 30 dní bez otázok — veľmi profesionálny prístup.</p>' },
+            { id: 7, name: 'Andrea Lukáčová', description: '<p>Ekologické hračky sú super nápad. Oceňujem zodpovedný prístup k prírode.</p>' },
+            { id: 8, name: 'Tibor Kováč', description: '<p>Záruka 2 roky a originálne produkty — nákup bez obáv.</p>' },
+            { id: 9, name: 'Natália Blaho', description: '<p>Hračky pre špeciálne potreby — nakoniec som našla niečo vhodné pre syna.</p>' },
+            { id: 10, name: 'Radoslav Novotný', description: '<p>Vernostný program je výborný. Zbierám body a dostávam odmeny.</p>' },
+            { id: 11, name: 'Denisa Pálková', description: '<p>Zákaznícka podpora mi pomohla vybrať správnu hračku pre vek dieťaťa.</p>' },
+            { id: 12, name: 'Igor Halás', description: '<p>Zberateľské edície LEGO sú dostupné len tu. Skvelý výber!</p>' },
+            { id: 13, name: 'Mária Benková', description: '<p>Jednoduché objednávanie a rýchle doručenie. Vnúčatá boli nadšené.</p>' },
+            { id: 14, name: 'Juraj Fedorčák', description: '<p>Montáž väčšej hračky zadarmo — výborná služba navyše.</p>' },
+            { id: 15, name: 'Soňa Miková', description: '<p>Click & Collect funguje perfektne — vyzdvihla som darček v deň objednávky.</p>' },
+            { id: 16, name: 'Branislav Horný', description: '<p>Exkluzívne sety dostupné len tu. Syn bol z darčeka úplne nadšený.</p>' },
+            { id: 17, name: 'Tatiana Štefanová', description: '<p>Vekové odporúčania sú veľmi nápomocné pri výbere správnej hračky.</p>' },
+            { id: 18, name: 'Ľubomír Kašuba', description: '<p>Odporúčania pedagógov mi dali istotu, že hračka je vhodná a bezpečná.</p>' },
+            { id: 19, name: 'Kristína Babičová', description: '<p>Náhradné diely pre stavebnice — skvelé, že ich môžem dokúpiť.</p>' },
+            { id: 20, name: 'Ján Bednár', description: '<p>Vianočné akcie sú každý rok lepšie. Skvelé zľavy na obľúbené značky.</p>' },
+            { id: 21, name: 'Oľga Luptáková', description: '<p>Inšpirácia na darček mi veľmi pomohla — presne trafili vkus dcéry.</p>' },
+            { id: 22, name: 'Daniel Hudák', description: '<p>Bezpečné platby a prehľadný košík. Nákup hotový za 5 minút.</p>' },
+            { id: 23, name: 'Ingrid Pospíšilová', description: '<p>LeapFrog hračky sú skvelé pre malé deti. Vždy nájdem, čo hľadám.</p>' },
+            { id: 24, name: 'Miroslav Belák', description: '<p>Overený obchod s výbornou povesťou. Nakupujem tu každé Vianoce.</p>' },
         ],
     },
 
@@ -582,6 +634,32 @@ const ESHOP_TYPES = {
             { id: 23, name: 'Repasované produkty', description: '<p>Certifikované repasované produkty so zárukou.</p>' },
             { id: 24, name: 'Prioritný servis', description: '<p>Prioritné vybavenie opravy do 48 hodín.</p>' },
         ],
+        testimonials: [
+            { id: 1, name: 'Jakub Hollý', description: '<p>MacBook dorazil v perfektnom stave a rýchlejšie ako som čakal. Odporúčam!</p>' },
+            { id: 2, name: 'Simona Urbánková', description: '<p>Odborné poradenstvo mi pomohlo vybrať správny televízor pre náš obývák.</p>' },
+            { id: 3, name: 'Pavol Ďurica', description: '<p>Predĺžená záruka na 5 rokov — to je skutočná istota pri drahej elektronike.</p>' },
+            { id: 4, name: 'Iveta Sedláková', description: '<p>Splátky bez úrokov sú skvelá možnosť. Notebook som si mohla dovoliť hneď.</p>' },
+            { id: 5, name: 'Róbert Krajný', description: '<p>Razer produkty vždy skladom a za najlepšie ceny. Najlepší herný obchod!</p>' },
+            { id: 6, name: 'Marta Súkeníková', description: '<p>Ekologická recyklácia starého laptopu — skvelá iniciatíva pri kúpe nového.</p>' },
+            { id: 7, name: 'Andrej Kováčik', description: '<p>Technická podpora po telefóne mi pomohla okamžite. Výborný servis!</p>' },
+            { id: 8, name: 'Ľubica Hrušková', description: '<p>Zálohovanie dát pred opravou — detail, ktorý ukazuje, že im záleží na zákazníkovi.</p>' },
+            { id: 9, name: 'Marián Šimončič', description: '<p>Demo predajňa je výborná — mohol som si všetko vyskúšať pred kúpou.</p>' },
+            { id: 10, name: 'Dagmar Petrová', description: '<p>Darčekové poukazy sú ideálny darček pre každého technonadšenca.</p>' },
+            { id: 11, name: 'Štefan Kňaze', description: '<p>Firemné ceny sú naozaj výhodné — zariadili sme celú kanceláriu tu.</p>' },
+            { id: 12, name: 'Gabriela Červená', description: '<p>Vrátenie do 30 dní bez problémov. Vymenili mi tablet za iný model.</p>' },
+            { id: 13, name: 'Oto Fabrici', description: '<p>Repasované produkty so zárukou — ušetril som a dostal som skvelý produkt.</p>' },
+            { id: 14, name: 'Natáša Kučerová', description: '<p>Zákaznícky servis 24/7 mi pomohol aj v noci počas pracovnej prezentácie.</p>' },
+            { id: 15, name: 'Vladimír Rektor', description: '<p>Inštalácia televízora doma — profesionálna práca, odporúčam!</p>' },
+            { id: 16, name: 'Zora Kubišová', description: '<p>Newsletter zľava 5 % — hneď som ju využila pri kúpe slúchadiel.</p>' },
+            { id: 17, name: 'Dávid Mináč', description: '<p>Poistenie zariadenia priamo pri kúpe — skvelá možnosť za rozumnú cenu.</p>' },
+            { id: 18, name: 'Marta Ďurišová', description: '<p>Originálne produkty vždy s platnou zárukou výrobcu. Žiadne pochybnosti.</p>' },
+            { id: 19, name: 'Peter Hollý', description: '<p>Click & Collect funguje skvele — telefón som mal v ruke hodinu po objednávke.</p>' },
+            { id: 20, name: 'Erika Vašíčková', description: '<p>Vernostný program — za rok nakupovania som ušetrila naozaj veľa.</p>' },
+            { id: 21, name: 'Juraj Malíček', description: '<p>Prioritný servis do 48 hodín — môj laptop bol opravený veľmi rýchlo.</p>' },
+            { id: 22, name: 'Soňa Lacová', description: '<p>Doprava zadarmo pri objednávke nad 100 € — výhodné pri drahej elektronike.</p>' },
+            { id: 23, name: 'Tomáš Horváth', description: '<p>Skvelý výber Xiaomi produktov za super ceny. Vždy sa vrátim!</p>' },
+            { id: 24, name: 'Renáta Nosálová', description: '<p>Autorizovaný servis priamo v obchode — všetko na jednom mieste.</p>' },
+        ],
     },
 
     cars: {
@@ -767,6 +845,32 @@ const ESHOP_TYPES = {
             { id: 23, name: 'Tuningové poradenstvo', description: '<p>Legálny tuning — poradíme s úpravami.</p>' },
             { id: 24, name: 'Veteránske diely', description: '<p>Špeciálna sekcia pre diely na historické vozidlá.</p>' },
         ],
+        testimonials: [
+            { id: 1, name: 'Milan Gašparík', description: '<p>Originálne diely vždy skladom a doručené do druhého dňa. Ideálny partner pre môj servis.</p>' },
+            { id: 2, name: 'Ľuboš Krajčí', description: '<p>Vyhľadávanie podľa VIN je geniálna funkcia — ihneď som našiel správny filter.</p>' },
+            { id: 3, name: 'Kamil Bezák', description: '<p>Garancia kompatibility mi dala istotu pri objednávke brzdových platničiek.</p>' },
+            { id: 4, name: 'Elena Kováčová', description: '<p>Záručný servis priamo u nich — rýchly a profesionálny. Odporúčam!</p>' },
+            { id: 5, name: 'Norbert Takáč', description: '<p>Diagnostika zadarmo pri objednávke dielu — skvelá pridaná hodnota.</p>' },
+            { id: 6, name: 'Ingrid Blaho', description: '<p>Technická podpora mi pomohla identifikovať správny diel. Výborná komunikácia.</p>' },
+            { id: 7, name: 'Rastislav Bača', description: '<p>Expresné doručenie do 4 hodín zachránilo moju cestu. Ďakujem!</p>' },
+            { id: 8, name: 'Monika Žitňanská', description: '<p>Vrátenie nepoužitého dielu do 30 dní — bezproblémové a profesionálne.</p>' },
+            { id: 9, name: 'Dušan Prívara', description: '<p>Montážny servis u partnerského servisu — ušetril som čas aj starosti.</p>' },
+            { id: 10, name: 'Viera Masárová', description: '<p>Firemný účet s výhodami — ideálne pre náš autoservis.</p>' },
+            { id: 11, name: 'Marek Bugár', description: '<p>Splátky bez navýšenia pri drahších dieloch — výborná možnosť.</p>' },
+            { id: 12, name: 'Dana Šafránková', description: '<p>Pneumatikový servis priamo v obchode — rýchly a lacný.</p>' },
+            { id: 13, name: 'Jozef Ružička', description: '<p>OEM kvalita za rozumnú cenu. Viac ako 50 000 položiek skladom.</p>' },
+            { id: 14, name: 'Marcela Pálová', description: '<p>Recyklácia starých dielov — zodpovedný prístup k životnému prostrediu.</p>' },
+            { id: 15, name: 'Vladimír Gális', description: '<p>Kamenná predajňa s odborným personálom — vždy mi poradia na mieste.</p>' },
+            { id: 16, name: 'Helena Bučková', description: '<p>Asistenčná linka pri poruche — rýchlo mi poradili, čo robiť.</p>' },
+            { id: 17, name: 'Ján Horník', description: '<p>E-katalóg dielov je veľmi prehľadný. Nájdem všetko, čo potrebujem.</p>' },
+            { id: 18, name: 'Beáta Gregušová', description: '<p>Rýchla doprava a výborné ceny. Môj muž je veľmi spokojný.</p>' },
+            { id: 19, name: 'Rudolf Masaryk', description: '<p>Vernostný program — za každý nákup body na ďalší. Výborný nápad.</p>' },
+            { id: 20, name: 'Zuzana Orlická', description: '<p>Tuningové poradenstvo — konečne legálne úpravy bez starostí.</p>' },
+            { id: 21, name: 'Andrej Pálffy', description: '<p>Veteránske diely pre môj oldtimer — skvelé, že ich majú!</p>' },
+            { id: 22, name: 'Ľudmila Kováčiková', description: '<p>Záruka 2 roky na všetky produkty — nakupujem s pokojom.</p>' },
+            { id: 23, name: 'Peter Tóth', description: '<p>Bezpečné platby s 3D Secure — moje údaje sú v bezpečí.</p>' },
+            { id: 24, name: 'Katarína Vlčková', description: '<p>Odborný tím automechanikov poradil pri výbere — šikovní ľudia!</p>' },
+        ],
     },
 
     tools: {
@@ -949,6 +1053,32 @@ const ESHOP_TYPES = {
             { id: 22, name: 'Náhradné diely', description: '<p>Dostupné náhradné diely pre väčšinu modelov.</p>' },
             { id: 23, name: 'Inštalácia na mieste', description: '<p>Inštalácia strojov priamo u zákazníka.</p>' },
             { id: 24, name: 'Technická dokumentácia', description: '<p>Kompletná dokumentácia a návody na stiahnutie.</p>' },
+        ],
+        testimonials: [
+            { id: 1, name: 'Ľubomír Pažický', description: '<p>Makita vždy skladom a za výborné ceny. Môj obľúbený dodávateľ náradia.</p>' },
+            { id: 2, name: 'Stanislava Kováčová', description: '<p>Profesionálne poradenstvo — pomohli mi vybrať správnu vŕtačku pre domácnosť.</p>' },
+            { id: 3, name: 'Ján Slobodník', description: '<p>Prenájom náradia pre jednorázové použitie — výborný nápad, ušetril som.</p>' },
+            { id: 4, name: 'Miriam Kašiarová', description: '<p>Odborné školenie k náradiu — naučila som sa bezpečne používať uhlovú brúsku.</p>' },
+            { id: 5, name: 'Peter Čierny', description: '<p>Záruka 3 roky na profesionálne náradie. Investícia, ktorá sa oplatí.</p>' },
+            { id: 6, name: 'Eva Kopčanová', description: '<p>Demo náradie v predajni — skúsila som priamu uhlová brúsku pred kúpou.</p>' },
+            { id: 7, name: 'Branislav Filo', description: '<p>Splátky bez úrokov pri drahej Festool píle — výborná možnosť.</p>' },
+            { id: 8, name: 'Agáta Mináčová', description: '<p>Garancia ceny — nájdete lacnejšie a vyrovnajú cenu. Super!</p>' },
+            { id: 9, name: 'Marián Varga', description: '<p>Firemné objednávky s faktúrou — zariadili sme celú dielňu tu.</p>' },
+            { id: 10, name: 'Lucia Štefanová', description: '<p>Bezpečnostné pomôcky k náradiu — skvelé, že ich predávajú spolu.</p>' },
+            { id: 11, name: 'Milan Krupička', description: '<p>Expresné doručenie do 4 hodín — stavba mohla pokračovať bez prestávky.</p>' },
+            { id: 12, name: 'Dagmar Hrubá', description: '<p>Servis a opravy priamo tu — môj Bosch je opäť ako nový.</p>' },
+            { id: 13, name: 'Juraj Mráz', description: '<p>Náhradné diely dostupné — nemusel som kupovať celú novú pílu.</p>' },
+            { id: 14, name: 'Alena Procházková', description: '<p>Zákaznícka podpora mi poradila s bezpečným použitím náradia.</p>' },
+            { id: 15, name: 'Tomáš Kováč', description: '<p>Recyklácia starého náradia — ekologická zodpovednosť, ktorú oceňujem.</p>' },
+            { id: 16, name: 'Ingrid Zacharová', description: '<p>Inštalácia stroja priamo u nás doma. Profesionálna práca, žiadne starosti.</p>' },
+            { id: 17, name: 'Róbert Náhlik', description: '<p>Akumulátorový systém Makita — všetky nástroje na jednu batériu. Výborné!</p>' },
+            { id: 18, name: 'Veronika Šimánková', description: '<p>Rýchle doručenie a perfektné balenie. Vŕtačka prišla nepoškodená.</p>' },
+            { id: 19, name: 'Dušan Nemec', description: '<p>B2B platforma je výborná pre firemné objednávky. Šetri čas.</p>' },
+            { id: 20, name: 'Jana Veselá', description: '<p>Vrátenie nepoužitého náradia do 30 dní — bezproblémové.</p>' },
+            { id: 21, name: 'Michal Krčmár', description: '<p>Rozsiahly sklad — vždy nájdem, čo potrebujem na stavbu.</p>' },
+            { id: 22, name: 'Zdenka Horníková', description: '<p>Originálne príslušenstvo od výrobcov — spoľahlivosť a dlhá životnosť.</p>' },
+            { id: 23, name: 'Vladimír Sedlák', description: '<p>Kamenná predajňa s odborným personálom — vždy ochotne poradia.</p>' },
+            { id: 24, name: 'Katarína Benešová', description: '<p>Technická dokumentácia dostupná online — môj manžel ju využíva každý deň.</p>' },
         ],
     },
 
@@ -1135,6 +1265,32 @@ const ESHOP_TYPES = {
             { id: 22, name: 'Zákaznícka podpora', description: '<p>Poradíme vám s výberom každý deň.</p>' },
             { id: 23, name: 'Recenzentský klub', description: '<p>Buďte prví, kto prečíta novinky a napíše recenziu.</p>' },
             { id: 24, name: 'Limitované vydania', description: '<p>Zberateľské a limitované edície kníh.</p>' },
+        ],
+        testimonials: [
+            { id: 1, name: 'Eva Krupová', description: '<p>Obrovský výber kníh a rýchle doručenie. Môj obľúbený kníhkupec online!</p>' },
+            { id: 2, name: 'Martin Čáni', description: '<p>Knižný klub mi každý mesiac odporučí niečo výborné. Skvelá služba!</p>' },
+            { id: 3, name: 'Soňa Béresová', description: '<p>Darčekové balenie kníh je nádherné — ideálny darček pre každý vek.</p>' },
+            { id: 4, name: 'Lukáš Greguš', description: '<p>Audioknihy dostupné okamžite po zaplatení. Počúvam každý deň cestou do práce.</p>' },
+            { id: 5, name: 'Daniela Húsková', description: '<p>Slovenská literatúra — nakoniec ju nájdem celú na jednom mieste.</p>' },
+            { id: 6, name: 'Pavel Kováček', description: '<p>E-knihy ihneď k dispozícii — nemusím čakať na doručenie.</p>' },
+            { id: 7, name: 'Ľudmila Mináčová', description: '<p>Recenzentský klub — som prvá, kto číta novinky. Absolútna radosť!</p>' },
+            { id: 8, name: 'Radovan Šimko', description: '<p>Odborné odporúčania redaktorov mi pomohli objaviť skvelých autorov.</p>' },
+            { id: 9, name: 'Katarína Horáčková', description: '<p>Zľavy pre školy sú výborné. Knižnicu sme zásobili za polovicu ceny.</p>' },
+            { id: 10, name: 'Ján Fiala', description: '<p>Knižné predplatné — každý mesiac nové tituly priamo do schránky.</p>' },
+            { id: 11, name: 'Anna Belková', description: '<p>Komiksy a manga — najväčší výber, aký som kde videla.</p>' },
+            { id: 12, name: 'Ľubor Janček', description: '<p>Firemné objednávky za výhodné ceny — zásobili sme celú firemnú knižnicu.</p>' },
+            { id: 13, name: 'Veronika Bučková', description: '<p>Autorské podujatia — stretla som svojho obľúbeného autora. Úžasný zážitok!</p>' },
+            { id: 14, name: 'Miroslav Kováč', description: '<p>Novinky každý týždeň — vždy nájdem, čo práve vyšlo.</p>' },
+            { id: 15, name: 'Petra Holíková', description: '<p>Detská sekcia je výborná — dcérka si vždy nájde niečo nové.</p>' },
+            { id: 16, name: 'Tomáš Bača', description: '<p>Doprava zadarmo pri objednávke nad 30 € — veľmi rozumná hranica.</p>' },
+            { id: 17, name: 'Marcela Výrostková', description: '<p>Darčekové poukazy sú ideálny vianočný darček pre každého čitateľa.</p>' },
+            { id: 18, name: 'Ondrej Kliment', description: '<p>Zákaznícke recenzie mi vždy pomôžu rozhodnúť sa. Verím im viac ako reklamám.</p>' },
+            { id: 19, name: 'Ľubica Novotná', description: '<p>Limitované vydania kníh — moja zbierka rastie každý rok.</p>' },
+            { id: 20, name: 'Ivan Šimkovič', description: '<p>Vrátenie do 30 dní — spokojnosť zaručená. Skúsil som, funguje to!</p>' },
+            { id: 21, name: 'Marta Čechová', description: '<p>Vernostný program — za každé euro body. Mám už dosť na zadarmo knihu.</p>' },
+            { id: 22, name: 'Jaroslav Krajčí', description: '<p>Bezpečné platby s SSL ochranou — nakupujem bez obáv.</p>' },
+            { id: 23, name: 'Silvia Janáčová', description: '<p>Zákaznícka podpora mi vždy poradí s výberom knihy podľa veku dieťaťa.</p>' },
+            { id: 24, name: 'Michal Blaho', description: '<p>Najväčší výber kníh na Slovensku — vždy nájdem, čo hľadám.</p>' },
         ],
     },
 
@@ -1329,6 +1485,32 @@ const ESHOP_TYPES = {
             { id: 23, name: 'Detská sekcia', description: '<p>Bezpečné a pohodlné oblečenie pre najmenších.</p>' },
             { id: 24, name: 'Svadobná kolekcia', description: '<p>Exkluzívny výber svadobných a spoločenských odevov.</p>' },
         ],
+        testimonials: [
+            { id: 1, name: 'Zuzana Horáková', description: '<p>Bezplatné vrátenie do 30 dní — konečne nakupujem oblečenie online bez obáv.</p>' },
+            { id: 2, name: 'Matej Valko', description: '<p>Veľkostný sprievodca je výborný — trafil som veľkosť na prvýkrát.</p>' },
+            { id: 3, name: 'Renáta Poláková', description: '<p>Udržateľná móda — šatník, na ktorý som hrdá. Skvelý výber eco oblečenia.</p>' },
+            { id: 4, name: 'Ladislav Oravec', description: '<p>Darčekové balenie pre manželku — bola nadšená. Elegantné a rýchle.</p>' },
+            { id: 5, name: 'Petra Holečková', description: '<p>Módne poradenstvo od štylistov zadarmo — pomohlo mi zostaviť celý outfit.</p>' },
+            { id: 6, name: 'Ján Kováčik', description: '<p>Výmena za inú veľkosť do 60 dní — super, keď sa neviem rozhodnúť.</p>' },
+            { id: 7, name: 'Ivana Gregorová', description: '<p>Sezónne kolekcie priamo od výrobcov — vždy niečo nové a štýlové.</p>' },
+            { id: 8, name: 'Tibor Sedlák', description: '<p>Firemné oblečenie s faktúrou — jednoduchá objednávka pre celý tím.</p>' },
+            { id: 9, name: 'Alena Lukáčová', description: '<p>Kravčírske úpravy na mieru — sako sedí perfektne.</p>' },
+            { id: 10, name: 'Miroslav Fekete', description: '<p>Exkluzívne značky, ktoré inde nenájdem. Moja adresa pre prémiovú módu.</p>' },
+            { id: 11, name: 'Marta Blahová', description: '<p>Vernostný program — zbierám body pri každom nákupe a šetrím.</p>' },
+            { id: 12, name: 'Ondrej Krajčí', description: '<p>Outdoor sekcia je výborná — kompletná výbava na turistiku na jednom mieste.</p>' },
+            { id: 13, name: 'Soňa Mináčová', description: '<p>Newsletter zľava 10 % — hneď som ju využila pri prvom nákupe.</p>' },
+            { id: 14, name: 'Rastislav Novák', description: '<p>Click & Collect — objednala som večer, vyzdvihla ráno. Skvelá služba.</p>' },
+            { id: 15, name: 'Lucia Babičová', description: '<p>Prémiové materiály — kašmírový sveter je naozaj kvalitný a mäkký.</p>' },
+            { id: 16, name: 'Dušan Kopál', description: '<p>Recycled fashion — oblečenie z recyklovaných materiálov vyzerá skvelo.</p>' },
+            { id: 17, name: 'Gabriela Šimková', description: '<p>Detská sekcia je krásna — pohodlné a bezpečné oblečenie pre synčeka.</p>' },
+            { id: 18, name: 'Michal Janáč', description: '<p>Doprava zadarmo pri objednávke nad 60 € — nakupujem väčšie sety.</p>' },
+            { id: 19, name: 'Viera Kováčová', description: '<p>Svadobná kolekcia — šaty boli dokonalé. Ďakujem za krásny deň!</p>' },
+            { id: 20, name: 'Peter Horný', description: '<p>Originálne značky za výborné ceny. Nakupujem tu každú sezónu.</p>' },
+            { id: 21, name: 'Jana Slobodová', description: '<p>Zákaznícka podpora módnych poradcov — pomohli mi zostaviť celý šatník.</p>' },
+            { id: 22, name: 'Ľubomír Vašek', description: '<p>Zberateľské edície od dizajnérov — vlastním unikátne kúsky, na ktoré som hrdý.</p>' },
+            { id: 23, name: 'Dagmar Nováková', description: '<p>Bezpečné platby a jednoduchý nákupný proces. Odporúčam každej módnej nadšenkyni.</p>' },
+            { id: 24, name: 'Karol Gál', description: '<p>Vrátenie bez otázok — profesionálny prístup, ktorý si zaslúži ocenenie.</p>' },
+        ],
     },
 };
 
@@ -1423,6 +1605,9 @@ function generatePhpContent(typeData, opts, counts) {
               counts.faqs ?? typeData.faqs.length
           )
         : typeData.faqs;
+    const selectedTestimonials = opts.testimonials
+        ? pickRandom(typeData.testimonials, counts.testimonials ?? typeData.testimonials.length).map((t, i) => ({ ...t, id: i + 1 }))
+        : typeData.testimonials;
 
     const b = (v) => (v ? 'true' : 'false');
 
@@ -1465,7 +1650,10 @@ function generatePhpContent(typeData, opts, counts) {
     const faqSectionsPhp = toPhpArray(selectedFaqSections);
     const faqsPhp = toPhpArray(selectedFaqs);
 
-    const productEnd = productCount + 5;
+    const testimonialsPhp = selectedTestimonials
+        .map(({ id, ...rest }) => `    ${id} => ${toPhpArray(rest, 1)}`)
+        .join(',\n');
+
 
     return `<?php
 /**
@@ -1490,6 +1678,7 @@ $options = [
     'articles' => ${b(opts.articles)}, // Dependencies: sections
     'faqSections' => ${b(opts.faqSections)},
     'faqs' => ${b(opts.faqs)}, // Dependencies: faqSections
+    'testimonials' => ${b(opts.testimonials)},
 ];
 
 /* data */
@@ -1522,6 +1711,10 @@ ${articlesPhp},
 $faqSections = ${faqSectionsPhp};
 
 $faqs = ${faqsPhp};
+
+$testimonials = [
+${testimonialsPhp},
+];
 
 /* execution */
 if ($options['manufacturers'] && \\count($manufacturers) > 0) {
@@ -1691,6 +1884,11 @@ if ($options['products']) {
     $tmpVolume = ['180', '250', '350', '420', '500', '750', '1250'];
     $tmpPriceId = 0;
 
+    // Clean up products and their prices from previous seed runs
+    $this->loadModel('Rshop/Admin.ProductPrices')->deleteAll([]);
+    $this->loadModel('Rshop/Admin.CategoriesProducts')->deleteAll([]);
+    $this->loadModel('Rshop/Admin.Products')->deleteAll([]);
+
     $data['Rshop/Admin.Products'] = [
         '_defaults' => [],
     ];
@@ -1699,8 +1897,7 @@ if ($options['products']) {
         '_defaults' => [],
     ];
 
-    // az od 5-ky aby sme si omylom neprepisali produkty kde sme vsetko povyplnali
-    for ($i = 5; $i < ${productEnd}; ++$i) {
+    for ($i = 0; $i < ${productCount}; ++$i) {
         $data['Rshop/Admin.Products'][] = [
             'id' => $i + 1,
             'name' => $tmpAdditional1[\\array_rand($tmpAdditional1)] . ' ' . $tmpNames[\\array_rand($tmpNames)] . ' ' . $tmpAdditional2[\\array_rand($tmpAdditional2)],
@@ -1866,6 +2063,27 @@ if ($options['faqs'] && \\count($faqs) > 0) {
     }
 }
 
+if ($options['testimonials'] && $testimonials) {
+    $tmpCount = 0;
+
+    $data['Rshop/Admin.Testimonials'] = [
+        '_defaults' => [
+            'image' => '',
+            'active' => 1
+        ],
+    ];
+
+    foreach ($testimonials as $testimonialId => $testimonial) {
+        $data['Rshop/Admin.Testimonials'][] = [
+            'id' => $testimonialId,
+            'name' => $testimonial['name'] ?? '',
+            'image' => $testimonial['image'] ?? '',
+            'description' => $testimonial['description'] ?? '',
+            'sort' => ++$tmpCount,
+        ];
+    }
+}
+
 $this->importTables($data);
 `;
 }
@@ -1891,7 +2109,7 @@ async function askCount(message, options, initialValue) {
     const choice = await p.select({ message, options, initialValue });
     if (p.isCancel(choice)) return null;
     if (choice === 'custom') {
-        const custom = await p.text({
+        const custom = await text({
             message: 'Vlastný počet:',
             validate: (v) => {
                 const n = parseInt(v, 10);
@@ -1930,8 +2148,9 @@ export async function runInitSeed() {
             { value: 'articles',      label: 'Články (requires: sections)' },
             { value: 'faqSections',   label: 'Sekcie FAQ (faq-sections)' },
             { value: 'faqs',          label: 'FAQ otázky (requires: faq-sections)' },
+            { value: 'testimonials',  label: 'Referencie (testimonials)' },
         ],
-        initialValues: ['manufacturers', 'properties', 'categories', 'products', 'branches', 'benefits', 'sections', 'articles', 'faqSections', 'faqs'],
+        initialValues: ['manufacturers', 'properties', 'categories', 'products', 'branches', 'benefits', 'sections', 'articles', 'faqSections', 'faqs', 'testimonials'],
     });
     if (p.isCancel(selected)) return;
 
@@ -1964,6 +2183,7 @@ export async function runInitSeed() {
         articles:      selected.includes('articles'),
         faqSections:   selected.includes('faqSections'),
         faqs:          selected.includes('faqs'),
+        testimonials:  selected.includes('testimonials'),
     };
 
     // 4. Ask counts for each selected option (except properties)
@@ -1978,6 +2198,7 @@ export async function runInitSeed() {
         articles: 12,
         faqSections: 12,
         faqs: 12,
+        testimonials: 12,
     };
 
     if (opts.manufacturers) {
@@ -2036,6 +2257,12 @@ export async function runInitSeed() {
         const v = await askCount('Počet FAQ otázok:', STANDARD_COUNT_OPTIONS, 12);
         if (v === null) return;
         counts.faqs = v;
+    }
+
+    if (opts.testimonials) {
+        const v = await askCount('Počet referencií:', STANDARD_COUNT_OPTIONS, 12);
+        if (v === null) return;
+        counts.testimonials = v;
     }
 
     // 5. Check if file exists

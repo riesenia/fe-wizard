@@ -2,7 +2,7 @@ import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { readdir, readFile, writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
-import { cancel, rootDir } from '../utils.js';
+import { cancel, text, rootDir } from '../utils.js';
 
 const FONTS_DIR_REL  = 'public/fonts';
 const FONTS_SCSS_REL = 'resources/css/common/_fonts.scss';
@@ -305,7 +305,7 @@ async function askGoogleFontsUrl(savedUrl) {
         if (choice === 'saved') return savedUrl;
     }
 
-    const url = await p.text({
+    const url = await text({
         message: 'Google Fonts URL:',
         placeholder: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@...',
         validate: (val) => {
