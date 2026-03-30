@@ -122,3 +122,7 @@ For text groups (`is_text = 1`): `text_header_footer` → `text.headerFooter` (p
 For normal groups: underscores replaced with dots (`my_group` → `my.group`).
 
 **Dependencies:** `@clack/prompts` (UI), `picocolors` (colors), `execa` (shell commands), `clipboardy` (clipboard)
+
+## BasicSeedShell constraints
+
+`BasicSeed\Shell\BasicSeedShell` does **not** have an `execute()` method — do not use `$this->execute()` for raw SQL in generated `seed_init.php`. Use `$this->loadModel('...')->deleteAll([])` for cleanup instead.

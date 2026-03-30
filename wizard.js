@@ -6,7 +6,7 @@ import { cancel, setupBackNavigation } from './utils.js';
 setupBackNavigation();
 import { runBox, fetchAllBoxes, fetchBoxTypes } from './commands/box.js';
 import { runBoxFields, runBoxSubitemFields, boxHasSubitems, enableBoxSubitems, runBannerFields } from './commands/fields.js';
-import { runBoxSeed, checkSeedExists } from './commands/seed.js';
+import { runBoxSeed, runSeedOnly, checkSeedExists } from './commands/seed.js';
 import { runConfiguration } from './commands/config.js';
 import { runBanner, fetchAllBanners } from './commands/banner.js';
 import { runProdWizard } from './commands/prod.js';
@@ -36,7 +36,8 @@ p.intro(pc.bold('Welcome to rWizard ✨ '));
 async function boxActions(box) {
     const done = new Set();
 
-    if (await checkSeedExists(box.boxKey)) done.add('seed');
+    let seedExists = await checkSeedExists(box.boxKey);
+    if (seedExists) done.add('seed');
     let hasSubitems = await boxHasSubitems(box.boxKey);
 
     const label = (value, text) => done.has(value) ? `${text} ${pc.green('✓')}` : text;
@@ -48,6 +49,7 @@ async function boxActions(box) {
                 ? [{ value: 'subitemFields', label: label('subitemFields', 'Update boxSubitems fields') }]
                 : [{ value: 'enableSubitems', label: 'Enable boxSubitems' }]),
             { value: 'seed',           label: label('seed',           'Create seed data') },
+            ...(seedExists ? [{ value: 'runSeed', label: 'Run seed' }] : []),
             { value: 'bye',            label: 'Bye-bye 👋' },
         ];
 
@@ -100,6 +102,9 @@ async function boxActions(box) {
         } else if (action === 'seed') {
             await runBoxSeed(box.boxKey, box.type, box.limit);
             done.add('seed');
+            seedExists = true;
+        } else if (action === 'runSeed') {
+            await runSeedOnly(box.boxKey);
         }
     }
 }
@@ -159,6 +164,11 @@ async function bannerMenu() {
                 continue;
             }
 
+            if (banners.length === 0) {
+                p.log.warn('No banner places found. Create one first.');
+                continue;
+            }
+
             const bannerKey = await p.select({
                 message: 'Select a banner place',
                 options: banners.map((b) => ({ value: b.bannerKey, label: `${b.bannerKey} (${b.name})` })),
@@ -199,9 +209,16 @@ async function boxMenu() {
                 continue;
             }
 
+            if (boxes.length === 0) {
+                p.log.warn('No boxes found. Create one first.');
+                continue;
+            }
+
+            const seedFlags = await Promise.all(boxes.map((b) => checkSeedExists(b.boxKey)));
+
             const boxKey = await p.select({
                 message: 'Select a box',
-                options: boxes.map((b) => ({ value: b.boxKey, label: `${b.boxKey} (${b.name})` })),
+                options: boxes.map((b, i) => ({ value: b.boxKey, label: `${b.boxKey} (${b.name})${seedFlags[i] ? pc.dim(' [seed]') : ''}` })),
             });
             if (p.isCancel(boxKey)) return;
 

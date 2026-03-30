@@ -1527,7 +1527,7 @@ function pickFirst(arr, n) {
     return arr.slice(0, Math.min(n, arr.length));
 }
 
-function selectCategories(pool, count, subMax) {
+function selectCategories(pool, count, subMax, subSubMax) {
     const selected = pickRandom(pool, count);
     return selected.map((cat) => {
         const n = Math.floor(Math.random() * (subMax + 1));
@@ -1539,7 +1539,19 @@ function selectCategories(pool, count, subMax) {
         while (padded.length < n) {
             padded.push({ name: `${label} ${padded.length + 1}` });
         }
-        return { ...cat, sub: pickRandom(padded, n) };
+        const subs = pickRandom(padded, n).map((subCat) => {
+            if (!subSubMax) return { ...subCat, sub: [] };
+            const m = Math.floor(Math.random() * (subSubMax + 1));
+            if (m === 0) return { ...subCat, sub: [] };
+            const subBase = subCat.sub || [];
+            const subPadded = [...subBase];
+            const subLabel = subCat.menu_name || subCat.name;
+            while (subPadded.length < m) {
+                subPadded.push({ name: `${subLabel} ${subPadded.length + 1}` });
+            }
+            return { ...subCat, sub: pickRandom(subPadded, m) };
+        });
+        return { ...cat, sub: subs };
     });
 }
 
@@ -1585,7 +1597,7 @@ function generatePhpContent(typeData, opts, counts) {
         ? pickRandom(typeData.manufacturers, counts.manufacturers ?? typeData.manufacturers.length)
         : typeData.manufacturers;
     const selectedCategories = opts.categories
-        ? selectCategories(typeData.categories, counts.categories ?? typeData.categories.length, counts.subCategoriesMax ?? 12)
+        ? selectCategories(typeData.categories, counts.categories ?? typeData.categories.length, counts.subCategoriesMax ?? 12, counts.subSubCategoriesMax ?? 4)
         : typeData.categories;
     const selectedBranches = opts.branches
         ? pickRandom(typeData.branches, counts.branches ?? typeData.branches.length)
@@ -1814,6 +1826,11 @@ if ($options['properties']) {
 }
 
 if ($options['categories'] && \\count($categories) > 0) {
+    // Clean up old categories and dependent data from previous seed runs
+    $this->loadModel('Rshop/Admin.CategoriesProducts')->deleteAll([]);
+    $this->loadModel('Rshop/Admin.Products')->deleteAll([]);
+    $this->loadModel('Rshop/Admin.Categories')->deleteAll([]);
+
     $tmpCount = 0;
 
     $data['Rshop/Admin.Categories'] = [
@@ -1824,10 +1841,10 @@ if ($options['categories'] && \\count($categories) > 0) {
         $data['Rshop/Admin.Categories'][] = [
             'id' => ++$tmpCount,
             'name' => $category['name'],
-            'menu_name' => $category['menu_name'] ?? null,
+            'menu_name' => null,
             'parent_id' => null,
             'display' => $category['display'] ?? 1,
-            'show_in_main_menu' => $category['show_in_main_menu'] ?? 1,
+            'show_in_main_menu' => $category['show_in_main_menu'] ?? 0,
             'show_subcategories' => $category['show_subcategories'] ?? 1,
             'active' => $category['active'] ?? 1,
             'has_active_path' => $category['has_active_path'] ?? 1,
@@ -1846,7 +1863,7 @@ if ($options['categories'] && \\count($categories) > 0) {
                     'menu_name' => $subCategory['menu_name'] ?? null,
                     'parent_id' => $parentId,
                     'display' => $subCategory['display'] ?? 1,
-                    'show_in_main_menu' => $subCategory['show_in_main_menu'] ?? 1,
+                    'show_in_main_menu' => $subCategory['show_in_main_menu'] ?? 0,
                     'active' => $subCategory['active'] ?? 1,
                     'has_active_path' => $subCategory['has_active_path'] ?? 1,
                     'description' => '${LOREM_DESC}'
@@ -1862,7 +1879,7 @@ if ($options['categories'] && \\count($categories) > 0) {
                             'menu_name' => $subSubCategory['menu_name'] ?? null,
                             'parent_id' => $subParentId,
                             'display' => $subSubCategory['display'] ?? 1,
-                            'show_in_main_menu' => $subSubCategory['show_in_main_menu'] ?? 1,
+                            'show_in_main_menu' => $subSubCategory['show_in_main_menu'] ?? 0,
                             'active' => $subSubCategory['active'] ?? 1,
                             'has_active_path' => $subSubCategory['has_active_path'] ?? 1,
                             'description' => '${LOREM_DESC}'
@@ -2093,20 +2110,23 @@ $this->importTables($data);
 const STANDARD_COUNT_OPTIONS = [
     { value: 1, label: '1' },
     { value: 4, label: '4' },
-    { value: 12, label: '12 (default)' },
+    { value: 12, label: '12' },
     { value: 24, label: '24' },
     { value: 'custom', label: 'Vlastný počet...' },
 ];
 
 const PRODUCT_COUNT_OPTIONS = [
     { value: 48, label: '48' },
-    { value: 128, label: '128 (default)' },
+    { value: 128, label: '128' },
     { value: 256, label: '256' },
     { value: 'custom', label: 'Vlastný počet...' },
 ];
 
 async function askCount(message, options, initialValue) {
-    const choice = await p.select({ message, options, initialValue });
+    const labeledOptions = options.map((o) =>
+        o.value === initialValue ? { ...o, label: `${o.label} (default)` } : o
+    );
+    const choice = await p.select({ message, options: labeledOptions, initialValue });
     if (p.isCancel(choice)) return null;
     if (choice === 'custom') {
         const custom = await text({
@@ -2189,14 +2209,15 @@ export async function runInitSeed() {
     // 4. Ask counts for each selected option (except properties)
     const counts = {
         manufacturers: 12,
-        categories: 12,
+        categories: 4,
         subCategoriesMax: 12,
-        products: 128,
-        branches: 12,
+        subSubCategoriesMax: 4,
+        products: 256,
+        branches: 4,
         benefits: 12,
-        sections: 12,
-        articles: 12,
-        faqSections: 12,
+        sections: 4,
+        articles: 24,
+        faqSections: 4,
         faqs: 12,
         testimonials: 12,
     };
@@ -2208,23 +2229,27 @@ export async function runInitSeed() {
     }
 
     if (opts.categories) {
-        const v = await askCount('Počet kategórií:', STANDARD_COUNT_OPTIONS, 12);
+        const v = await askCount('Počet kategórií:', STANDARD_COUNT_OPTIONS, 4);
         if (v === null) return;
         counts.categories = v;
 
         const sub = await askCount('Max. počet podkategórií na kategóriu (rozsah 0–x):', STANDARD_COUNT_OPTIONS, 12);
         if (sub === null) return;
         counts.subCategoriesMax = sub;
+
+        const subSub = await askCount('Max. počet podpodkategórií na podkategóriu (rozsah 0–x):', STANDARD_COUNT_OPTIONS, 4);
+        if (subSub === null) return;
+        counts.subSubCategoriesMax = subSub;
     }
 
     if (opts.products) {
-        const v = await askCount('Počet produktov:', PRODUCT_COUNT_OPTIONS, 128);
+        const v = await askCount('Počet produktov:', PRODUCT_COUNT_OPTIONS, 256);
         if (v === null) return;
         counts.products = v;
     }
 
     if (opts.branches) {
-        const v = await askCount('Počet pobočiek:', STANDARD_COUNT_OPTIONS, 12);
+        const v = await askCount('Počet pobočiek:', STANDARD_COUNT_OPTIONS, 4);
         if (v === null) return;
         counts.branches = v;
     }
@@ -2236,19 +2261,19 @@ export async function runInitSeed() {
     }
 
     if (opts.sections) {
-        const v = await askCount('Počet sekcií:', STANDARD_COUNT_OPTIONS, 12);
+        const v = await askCount('Počet sekcií:', STANDARD_COUNT_OPTIONS, 4);
         if (v === null) return;
         counts.sections = v;
     }
 
     if (opts.articles) {
-        const v = await askCount('Počet článkov (okrem právnych):', STANDARD_COUNT_OPTIONS, 12);
+        const v = await askCount('Počet článkov (okrem právnych):', STANDARD_COUNT_OPTIONS, 24);
         if (v === null) return;
         counts.articles = v;
     }
 
     if (opts.faqSections) {
-        const v = await askCount('Počet FAQ sekcií:', STANDARD_COUNT_OPTIONS, 12);
+        const v = await askCount('Počet FAQ sekcií:', STANDARD_COUNT_OPTIONS, 4);
         if (v === null) return;
         counts.faqSections = v;
     }

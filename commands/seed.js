@@ -296,13 +296,23 @@ export async function runBoxSeed(boxKey, type, limit) {
     if (p.isCancel(runNow)) return;
 
     if (runNow) {
-        spinner.start(`Running: bin/cake migrations seed --seed ${seedClassName}`);
-        try {
-            await execa('bin/cake', ['migrations', 'seed', '--seed', seedClassName], { cwd: rootDir });
-            spinner.stop('Seed applied! ✨');
-        } catch (err) {
-            spinner.stop('Seed failed');
-            p.log.error(err.stderr || err.message);
-        }
+        await execSeed(seedClassName);
     }
+}
+
+async function execSeed(seedClassName) {
+    const spinner = p.spinner();
+    spinner.start(`Running: bin/cake migrations seed --seed ${seedClassName}`);
+    try {
+        await execa('bin/cake', ['migrations', 'seed', '--seed', seedClassName], { cwd: rootDir });
+        spinner.stop('Seed applied! ✨');
+    } catch (err) {
+        spinner.stop('Seed failed');
+        p.log.error(err.stderr || err.message);
+    }
+}
+
+export async function runSeedOnly(boxKey) {
+    const seedClassName = `${toCamelCase(boxKey)}BoxItemsSeed`;
+    await execSeed(seedClassName);
 }
