@@ -1623,10 +1623,26 @@ function generatePhpContent(typeData, opts, counts) {
 
     const b = (v) => (v ? 'true' : 'false');
 
-    // Build article list filtered to valid section_ids only
+    // Build article list — remap section_ids to nearest selected ancestor if needed
     const selectedSectionIds = new Set(selectedSections.map((s) => s.id));
-    const legalArticles = typeData.articles.filter((a) => a.legal && selectedSectionIds.has(a.section_id));
-    const blogArticles = typeData.articles.filter((a) => !a.legal && selectedSectionIds.has(a.section_id));
+    const sectionsById = new Map(typeData.sections.map((s) => [s.id, s]));
+
+    function nearestSelectedSection(sectionId) {
+        if (selectedSectionIds.has(sectionId)) return sectionId;
+        const parent = sectionsById.get(sectionId)?.parent_id;
+        return parent != null ? nearestSelectedSection(parent) : null;
+    }
+
+    const legalArticles = typeData.articles
+        .filter((a) => a.legal)
+        .map((a) => ({ ...a, section_id: nearestSelectedSection(a.section_id) }))
+        .filter((a) => a.section_id != null);
+
+    const blogArticles = typeData.articles
+        .filter((a) => !a.legal)
+        .map((a) => ({ ...a, section_id: nearestSelectedSection(a.section_id) }))
+        .filter((a) => a.section_id != null);
+
     const selectedBlogArticles = [];
     if (blogArticles.length > 0) {
         for (let i = 0; i < articleCount; i++) {
@@ -2215,7 +2231,7 @@ export async function runInitSeed() {
         products: 256,
         branches: 4,
         benefits: 12,
-        sections: 4,
+        sections: 12,
         articles: 24,
         faqSections: 4,
         faqs: 12,
@@ -2261,7 +2277,7 @@ export async function runInitSeed() {
     }
 
     if (opts.sections) {
-        const v = await askCount('Počet sekcií:', STANDARD_COUNT_OPTIONS, 4);
+        const v = await askCount('Počet sekcií:', STANDARD_COUNT_OPTIONS, 12);
         if (v === null) return;
         counts.sections = v;
     }
